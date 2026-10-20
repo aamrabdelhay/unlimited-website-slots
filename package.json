@@ -1,0 +1,45 @@
+{
+  "name": "unlimited-website-slots",
+  "private": true,
+  "scripts": {
+    "dev": "tsx scripts/generate-registry.ts --quiet && next dev",
+    "build": "tsx scripts/generate-registry.ts --quiet && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "registry:generate": "tsx scripts/generate-registry.ts",
+    "slots:list": "tsx scripts/list-slots.ts",
+    "slots:create": "tsx scripts/create-slot.ts",
+    "slots:reset": "tsx scripts/reset-slot.ts",
+    "slots:extract": "tsx scripts/extract-slot.ts",
+    "slots:transfer": "tsx scripts/data-transfer.ts",
+    "slot:db": "tsx scripts/slot-drizzle.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "dotenv": "17.3.1",
+    "drizzle-orm": "0.45.2",
+    "lucide-react": "^1.60.0",
+    "next": "16.2.6",
+    "pg": "8.20.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "tsx": "^4.23.15",
+    "vitest": "^5.0.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.17",
+    "@types/node": "22.19.15",
+    "@types/pg": "8.18.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "postcss": "8.5.8",
+    "tailwindcss": "4.1.17",
+    "typescript": "5.9.3"
+  }
+}

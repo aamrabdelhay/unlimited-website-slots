@@ -1,0 +1,14 @@
+{
+  "slotId": 1,
+  "name": "Meridian Studio",
+  "description": "Architecture & interior design studio — multi-page site with dynamic routes, a working contact form, and a slot-scoped database.",
+  "status": "in-use",
+  "createdAt": "2026-10-20T11:45:27.021Z",
+  "updatedAt": "2026-10-20T11:45:27.021Z",
+  "database": {
+    "mode": "shared",
+    "schema": "slot_000001"
+  },
+  "notes": "",
+  "extraction": null
+}
