@@ -6,13 +6,6 @@
 import { slotManifestSchema, type SlotManifest } from "@/lib/manifest";
 import type { SiteDefinition } from "@/lib/site-contract";
 
-import { site as site_slot_000001 } from "../../sites/slot-000001/site";
-import rawManifest_slot_000001 from "../../sites/slot-000001/manifest.json";
-import { site as site_slot_000005 } from "../../sites/slot-000005/site";
-import rawManifest_slot_000005 from "../../sites/slot-000005/manifest.json";
-import { site as site_slot_000127 } from "../../sites/slot-000127/site";
-import rawManifest_slot_000127 from "../../sites/slot-000127/manifest.json";
-
 export interface SlotRegistryEntry {
   slotId: number;
   dirName: string;
@@ -21,17 +14,9 @@ export interface SlotRegistryEntry {
   site: SiteDefinition;
 }
 
-const manifest_slot_000001: SlotManifest = slotManifestSchema.parse(rawManifest_slot_000001);
-const manifest_slot_000005: SlotManifest = slotManifestSchema.parse(rawManifest_slot_000005);
-const manifest_slot_000127: SlotManifest = slotManifestSchema.parse(rawManifest_slot_000127);
+export const SLOT_ENTRIES: readonly SlotRegistryEntry[] = [];
 
-export const SLOT_ENTRIES: readonly SlotRegistryEntry[] = [
-  { slotId: 1, dirName: "slot-000001", basePath: "/s/1", manifest: manifest_slot_000001, site: site_slot_000001 },
-  { slotId: 5, dirName: "slot-000005", basePath: "/s/5", manifest: manifest_slot_000005, site: site_slot_000005 },
-  { slotId: 127, dirName: "slot-000127", basePath: "/s/127", manifest: manifest_slot_000127, site: site_slot_000127 },
-];
-
-export const REGISTERED_SLOT_IDS: readonly number[] = [1, 5, 127];
+export const REGISTERED_SLOT_IDS: readonly number[] = [];
 
 const entriesById: ReadonlyMap<number, SlotRegistryEntry> = new Map(SLOT_ENTRIES.map((entry) => [entry.slotId, entry]));
 

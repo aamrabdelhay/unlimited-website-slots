@@ -123,7 +123,8 @@ describe("generated registry indexes", () => {
     const root = JSON.parse(readFileSync(path.resolve("registry.json"), "utf8"));
     const generated = JSON.parse(readFileSync(path.resolve("src/generated/registry.json"), "utf8"));
     const parsed = registryIndexSchema.parse(root);
-    expect(parsed.slots.length).toBeGreaterThan(0);
+    // An empty framework is a valid state — the dashboard renders its
+    // empty state without a database. Assumes nothing about slot count.
     expect(root).toEqual(generated); // single source of truth, no drift
     for (const slot of parsed.slots) {
       expect(slot.basePath).toBe(`/s/${slot.slotId}`);
