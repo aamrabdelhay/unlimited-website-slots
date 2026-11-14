@@ -1,4 +1,4 @@
-import { Boxes, Database, FolderGit2, Layers } from "lucide-react";
+import { Boxes, Database, FolderGit2, Layers, Scale } from "lucide-react";
 import registryIndexJson from "@/generated/registry.json";
 import { registryIndexSchema } from "@/lib/manifest";
 import { DeckBrowser } from "@/components/deck-browser";
@@ -25,10 +25,17 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-[#0b0b0d] text-stone-200">
       {/* Top bar */}
       <header className="border-b border-white/10">
-        <div className="mx-auto flex max-w-7xl items-center px-6 py-5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <p className="font-mono text-sm tracking-tight text-white">
             slots<span className="text-amber-300">/</span>
           </p>
+          <a
+            href="/marafeat-tanfiz.html"
+            className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2.5 text-xs font-bold text-amber-200 transition-colors hover:border-amber-300/60 hover:bg-amber-300/20"
+          >
+            <Scale className="h-4 w-4" aria-hidden />
+            مرافعات تنفيذ جبري
+          </a>
         </div>
       </header>
 
