@@ -102,7 +102,7 @@ function nodePositions(){
   branchPositions[g.id]={x:bx,y:by,angle};
   const ids=topicIds.filter(id=>T[id].g===g.id),n=ids.length;
   ids.forEach((id,i)=>{
-   const offset=(i-(n-1)/2)*(n===3?.43:n===4?.34:.28);
+   const offset=(i-(n-1)/2)*(n===3?.4:n===4?.3:.25);
    const a=angle+offset;
    const radius=(n===5?(i%2===0?545:715):n===4?(i%2===0?555:690):610);
    positions[id]={x:CX+Math.cos(a)*radius,y:CY+Math.sin(a)*radius};
