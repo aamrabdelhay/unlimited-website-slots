@@ -66,7 +66,7 @@
 
 :root{--stick-scale:1}.settings-button{position:fixed;top:calc(var(--safe-top) + 56px);right:12px;z-index:9;width:34px;height:34px;min-width:34px;padding:0;font-size:17px;border-radius:50%;border:1px solid #d8b36b90;background:#122019e8;color:#f2d69b;box-shadow:0 4px 16px #0008;display:grid;place-items:center}
 .settings-panel{position:absolute;z-index:40;top:calc(var(--safe-top) + 56px);right:12px;width:min(320px,calc(100vw - 24px));padding:14px 16px;border:1px solid #c6a66680;border-radius:15px;background:linear-gradient(145deg,#18271f,#0c1712);box-shadow:0 16px 44px #000b;color:#f4efdf}.settings-panel.hidden{display:none}.settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.settings-close{border:0;background:#ffffff12;color:#fff;border-radius:8px;width:28px;height:28px;font-size:21px}.settings-panel label{display:block;font-size:12px;color:#e6d4ad;margin-bottom:8px}.settings-range{display:flex;align-items:center;gap:8px}.settings-range span{font-size:9px;color:#aeb9a9}.settings-range input{flex:1;accent-color:#d1a95e}.settings-panel output{display:block;color:#e5c17d;font-weight:800;font-size:12px;margin-top:4px}.settings-panel p{font-size:10px;line-height:1.7;color:#aeb9a9;margin:10px 0 0}
-.stick,.classic-stick{transform:scale(var(--stick-scale));transform-origin:bottom left}.touch-controls{pointer-events:none}.touch-controls .stick{pointer-events:auto}.gesture-hint{position:absolute;right:50%;bottom:calc(16px + var(--safe-bottom));transform:translateX(50%);padding:7px 11px;border-radius:24px;background:#102018b8;border:1px solid #ffffff28;color:#f5e8c9;font-size:10px;white-space:nowrap;pointer-events:none}
+.stick,.classic-stick{transform:scale(var(--stick-scale));transform-origin:bottom left}.touch-controls{pointer-events:none;direction:ltr}.touch-controls .stick{pointer-events:auto}.gesture-hint{position:absolute;right:50%;bottom:calc(16px + var(--safe-bottom));transform:translateX(50%);padding:7px 11px;border-radius:24px;background:#102018b8;border:1px solid #ffffff28;color:#f5e8c9;font-size:10px;white-space:nowrap;pointer-events:none}
 .mode-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-height:260px}.mode-preview-shell{height:150px;min-height:150px;position:relative;overflow:hidden;border-radius:11px;background:#253e2b;border:1px solid #ffffff18}.mode-preview{width:100%;height:100%;display:block;object-fit:cover}.preview-stamp{position:absolute;right:8px;bottom:7px;padding:4px 8px;border-radius:12px;background:#101a14c9;color:#f2d6a0;font-size:9px}.mode-copy{width:100%;padding:0 5px}.mode-copy strong{font-size:21px}
 .creature-portrait{height:132px!important;display:block!important;overflow:hidden;background:radial-gradient(circle at 50% 48%,#526b4f,#14231b 75%)!important}.creature-render{display:block;width:100%;height:100%;object-fit:contain}.creature-card{cursor:pointer;min-height:235px}.creature-card:active,.mode-card:active{transform:scale(.99)}
 #game{touch-action:none}.classic-canvas{touch-action:none}
@@ -445,7 +445,7 @@ function buildEnvironment(){
  if(state.map==='garden')addPark();else if(state.map==='street')addStreet();else if(state.map==='station')addStation();else if(state.map==='home')addHome();else if(state.map==='kitchen')addKitchen();else addNightValley();
 }
 
-function animalLoft(parent,sections,material,radial=20){
+function animalLoft(parent,sections,material,radial=28){
  const vertices=[],indices=[];
  for(const [z,cx,cy,rx,ry] of sections)for(let j=0;j<radial;j++){const a=j/radial*Math.PI*2;vertices.push(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry,z)}
  for(let i=0;i<sections.length-1;i++)for(let j=0;j<radial;j++){const a=i*radial+j,b=i*radial+(j+1)%radial;indices.push(a,a+radial,b+radial,b)}
@@ -453,14 +453,14 @@ function animalLoft(parent,sections,material,radial=20){
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
  const o=new THREE.Mesh(g,material);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o;
 }
-function animalBall(parent,name,material,x,y,z,sx,sy,sz,segments=16){
+function animalBall(parent,name,material,x,y,z,sx,sy,sz,segments=24){
  const o=new THREE.Mesh(new THREE.SphereGeometry(1,segments,Math.max(8,Math.floor(segments*.65))),material);o.name=name;o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o;
 }
-function animalBeam(parent,name,a,b,r1,r2,material,radial=9){
+function animalBeam(parent,name,a,b,r1,r2,material,radial=12){
  const va=new THREE.Vector3(...a),vb=new THREE.Vector3(...b),dir=vb.clone().sub(va),o=new THREE.Mesh(new THREE.CylinderGeometry(r2,r1,dir.length(),radial),material);o.name=name;o.position.copy(va.add(vb).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());o.castShadow=false;parent.add(o);return o;
 }
 function animalTube(parent,name,points,radius,material){
- const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),o=new THREE.Mesh(new THREE.TubeGeometry(curve,28,radius,7,false),material);o.name=name;o.castShadow=false;parent.add(o);return o;
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),o=new THREE.Mesh(new THREE.TubeGeometry(curve,36,radius,10,false),material);o.name=name;o.castShadow=false;parent.add(o);return o;
 }
 function createAnimal(skin){
  const g=new THREE.Group(),c=mat(skin.color,.64),a=mat(skin.accent,.7),dark=mat(0x201d17,.28),ivory=mat(0xf2e6ce,.35),belly=mat(0xe7d7b5,.88),pink=mat(0xc77b78,.6),black=mat(0x252a27,.55);
@@ -482,7 +482,7 @@ function createAnimal(skin){
   for(const side of [-1,1]){animalBall(g,'Raised eye ridge',a,side*.30,.68,-.52,.16,.11,.22);eye(side*.30,.68,-.64,.105);animalBall(g,'Nostril',dark,side*.12,.39,-.96,.035,.03,.03)}
   animalTube(g,'Forked tongue',[[0,.31,-.92],[0,.27,-1.16],[.08,.24,-1.25]],.025,pink);
  }else if(fish){
-  animalLoft(g,[[.92,0,.53,.08,.10],[.64,0,.55,.25,.28],[.28,0,.58,.42,.39],[-.16,0,.61,.55,.47],[-.53,0,.59,.43,.38],[-.86,0,.55,.12,.14]],c,24);
+  animalLoft(g,[[.92,0,.53,.08,.10],[.64,0,.55,.25,.28],[.28,0,.58,.42,.39],[-.16,0,.61,.55,.47],[-.53,0,.59,.43,.38],[-.86,0,.55,.12,.14]],c,30);
   animalBall(g,'Fish belly',belly,0,.39,-.13,.35,.16,.48);
   for(const side of [-1,1]){
    animalBeam(g,'Pectoral fin',[side*.35,.55,-.02],[side*.85,.48,.35],.22,.012,a,8);
@@ -495,7 +495,7 @@ function createAnimal(skin){
   animalBeam(g,'Dorsal fin',[0,.93,.10],[0,1.30,.65],.18,.008,a,8);
   animalBeam(g,'Anal fin',[0,.28,.24],[0,.08,.70],.12,.006,a,8);
  }else if(bird){
-  animalLoft(g,[[.78,0,.66,.05,.06],[.53,0,.70,.27,.29],[.15,0,.74,.43,.41],[-.24,0,.73,.46,.42],[-.57,0,.68,.30,.31],[-.80,0,.65,.10,.12]],c,20);
+  animalLoft(g,[[.78,0,.66,.05,.06],[.53,0,.70,.27,.29],[.15,0,.74,.43,.41],[-.24,0,.73,.46,.42],[-.57,0,.68,.30,.31],[-.80,0,.65,.10,.12]],c,26);
   animalBall(g,'Breast',belly,0,.62,-.30,.35,.24,.30);
   animalBall(g,'Head',c,0,1.02,-.54,.38,.36,.37);
   animalBeam(g,'Beak upper',[0,.98,-.85],[0,.83,-1.18],.15,.008,a,8);
@@ -503,7 +503,7 @@ function createAnimal(skin){
    eye(side*.24,1.08,-.81,.09);
    // Sculpted multi-layer wings with articulated pivot groups.
    const wing=new THREE.Group();wing.position.set(side*.34,.83,-.02);g.add(wing);
-   animalLoft(wing,[[.38,0,0,.04,.05],[.16,side*.14,-.02,.18,.14],[-.16,side*.32,-.04,.22,.15],[-.48,side*.43,-.06,.07,.08]],a,12);
+   animalLoft(wing,[[.38,0,0,.04,.05],[.16,side*.14,-.02,.18,.14],[-.16,side*.32,-.04,.22,.15],[-.48,side*.43,-.06,.07,.08]],a,16);
    for(let n=0;n<3;n++)animalBeam(wing,'Flight feather',[side*(.10+n*.07),.70,-.02],[side*(.26+n*.17),.06,-.18-n*.08],.10,.01,belly,7);
    wings.push({group:wing,side});
    if(skin.id==='owl'){
@@ -521,7 +521,7 @@ function createAnimal(skin){
   for(let j=-1;j<=1;j++)animalBeam(g,'Tail feather',[j*.10,.65,.40],[j*.14,.80,.85],.09,.01,belly,8);
  }else{
   // Common quadruped body is a tapered loft, not a stack of spheres.
-  animalLoft(g,[[.92,0,.78,.09,.10],[.67,0,.80,.31,.31],[.35,0,.84,.43,.39],[-.08,0,.83,.46,.40],[-.46,0,.81,.39,.35],[-.78,0,.79,.22,.23],[-.96,0,.77,.07,.09]],c,22);
+  animalLoft(g,[[.92,0,.78,.09,.10],[.67,0,.80,.31,.31],[.35,0,.84,.43,.39],[-.08,0,.83,.46,.40],[-.46,0,.81,.39,.35],[-.78,0,.79,.22,.23],[-.96,0,.77,.07,.09]],c,28);
   animalLoft(g,[[.12,0,.90,.25,.27],[-.12,0,1.08,.23,.25],[-.36,0,1.29,.18,.20],[-.56,0,1.39,.15,.16]],c,18);
   animalBall(g,'Head',c,0,1.39,-.63,skin.id==='panda'?.43:.34,skin.id==='panda'?.39:.34,skin.id==='panda'?.43:.40);
   animalBall(g,'Muzzle',belly,0,1.25,-.94,.23,.17,.27);
@@ -540,7 +540,7 @@ function createAnimal(skin){
     animalBeam(g,'Antler tine',[side*.33,2.04,-.44],[side*.38,2.38,-.45],.04,.01,a);
     animalBeam(g,'Antler fork',[side*.19,2.10,-.42],[side*.02,2.36,-.44],.04,.01,a);
    }else if(skin.id==='croc'){
-    animalLoft(g,[[.12,0,.72,.11,.12],[-.10,side*.02,.76,.24,.15],[-.40,side*.02,.76,.36,.13],[-.76,0,.73,.25,.11]],a,12);
+    animalLoft(g,[[.12,0,.72,.11,.12],[-.10,side*.02,.76,.24,.15],[-.40,side*.02,.76,.36,.13],[-.76,0,.73,.25,.11]],a,16);
     for(let n=0;n<6;n++)animalBeam(g,'Back scute',[side*.18,.99,.18-n*.19],[side*.18,.99+.16,.12-n*.19],.08,.01,a,6);
    }else if(skin.id==='lion'){
     animalBall(g,'Mane crown',a,side*.03,1.36,-.54,.50,.48,.48);
