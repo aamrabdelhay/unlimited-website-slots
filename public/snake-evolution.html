@@ -3692,7 +3692,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  const oldUpdateOpen=updateOpen;
  updateOpen=function(dt,t){oldUpdateOpen(dt,t);if(!mpActive)return;const now=performance.now();if(now-lastSent>90){lastSent=now;sendUpdate()}};
  const oldStartOpenGame=startOpenGame;
- startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&player&&world){remoteObjects.clear();lastSent=0;sendUpdate()}};
+ startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&player&&world){remoteObjects.clear();syncRemotePlayers([...players.values()]);lastSent=0;sendUpdate()}};
  const oldFinishRound=finishRound;
  finishRound=function(reason){if(mpActive){sendUpdate();document.getElementById("mpStatus").textContent="انتهت الجولة"}oldFinishRound(reason)};
  document.getElementById("mpJoin").onclick=()=>{const r=document.getElementById("mpRoom").value.trim();if(!r)document.getElementById("mpRoom").value=randomRoom();connect();if(mpActive){state.mode="open";state.score=0;startGame()}};
