@@ -433,8 +433,8 @@ function buildEnvironment(){
 function animalLoft(parent,sections,material,radial=20){
  const vertices=[],indices=[];
  for(const [z,cx,cy,rx,ry] of sections)for(let j=0;j<radial;j++){const a=j/radial*Math.PI*2;vertices.push(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry,z)}
- for(let i=0;i<sections.length-1;i++)for(let j=0;j<radial;j++){const a=i*radial+j,b=i*radial+(j+1)%radial;indices.push(a,b,b+radial,a+radial)}
- indices.push(...Array.from({length:radial},(_,j)=>radial-1-j));const last=(sections.length-1)*radial;indices.push(...Array.from({length:radial},(_,j)=>last+j));
+ for(let i=0;i<sections.length-1;i++)for(let j=0;j<radial;j++){const a=i*radial+j,b=i*radial+(j+1)%radial;indices.push(a,a+radial,b+radial,b)}
+ indices.push(...Array.from({length:radial},(_,j)=>j));const last=(sections.length-1)*radial;indices.push(...Array.from({length:radial},(_,j)=>last+radial-1-j));
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
  const o=new THREE.Mesh(g,material);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o;
 }
