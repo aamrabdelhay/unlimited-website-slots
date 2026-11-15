@@ -3234,7 +3234,10 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   function applyBiomeGround(){
     const tex=biomeGroundTexture(state.map);
     for(const o of world.children){
-      if(o.geometry?.type!=="PlaneGeometry"||o.position.y>-.01||!o.material?.isMeshStandardMaterial)continue;
+      const planeFloor=o.geometry?.type==="PlaneGeometry"&&o.position.y<-.01;
+      const p=o.geometry?.parameters||{};
+      const roomFloor=o.geometry?.type==="BoxGeometry"&&p.width>=60&&p.depth>=50&&o.position.y<.2;
+      if((!planeFloor&&!roomFloor)||!o.material?.isMeshStandardMaterial)continue;
       o.material.map=tex;o.material.color.setHex(0xffffff);o.material.roughness=state.map==="kitchen"?.68:.96;o.material.metalness=0;o.material.needsUpdate=true;
     }
   }
@@ -3243,6 +3246,37 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 
   // Fireflies float gently through the woodland canopy.
   // The existing world animator already advances traffic, kitchen props, rat motion and fireflies.
+
+  // Grounded gait and secondary motion: alternating foot plants, body settle,
+  // head counter-sway and responsive wings. This extends the anatomical jaw rig.
+  const previousCreatureMotion=animateCreature;
+  let previousCreatureHeading=heading;
+  animateCreature=function(t,moving){
+    previousCreatureMotion(t,moving);
+    const rig=creatureHead?.userData?.rig;if(!rig)return;
+    const phase=t*(moving?.0175:.0032);
+    const diagonal=[0,Math.PI,Math.PI,0];
+    rig.limbs?.forEach((leg,i)=>{
+      const wave=Math.sin(phase+diagonal[i%4]),lift=Math.max(0,Math.sin(phase+diagonal[i%4]));
+      if(leg.userData.wtRestY===undefined)leg.userData.wtRestY=leg.position.y;
+      leg.rotation.x=moving?wave*.34:Math.sin(t*.001+i)*.018;
+      leg.rotation.z=(i%2?1:-1)*(moving?.035:.006);
+      leg.position.y=leg.userData.wtRestY+(moving?lift*.065:0);
+    });
+    rig.wings?.forEach((wing,i)=>{
+      const flap=Math.sin(phase*1.75+i*Math.PI)*.12;
+      wing.group.rotation.z=wing.side*(moving?.14+flap:.035*Math.sin(t*.002+i));
+      wing.group.rotation.x=moving?Math.sin(phase*1.75+i*Math.PI)*.06:0;
+    });
+    if(rig.head&&rig.head!==creatureHead){
+      rig.head.rotation.x=(moving?Math.sin(phase*.62)*.025:Math.sin(t*.0012)*.012);
+      rig.head.rotation.y=(moving?Math.sin(phase*.38)*.025:Math.sin(t*.0008)*.014);
+    }
+    const turn=Math.atan2(Math.sin(heading-previousCreatureHeading),Math.cos(heading-previousCreatureHeading));
+    creatureHead.rotation.z=clamp(turn,-.16,.16)*.55+(moving?Math.sin(phase)*.018:0);
+    previousCreatureHeading=heading;
+    creatureHead.position.y+=(moving?.035:.012-creatureHead.position.y)*.16;
+  };
 
   // A refined locomotive with a weighted chassis, inset window bays, bogies,
   // wheel hubs, door divisions, headlights and warm passenger lighting.
