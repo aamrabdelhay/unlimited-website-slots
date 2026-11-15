@@ -113,10 +113,8 @@
    Procedural species materials, higher-detail foliage and architecture,
    enclosed indoor ceilings, and optional locally-vendored GLB hero assets. */
 (function wildTrailsPremiumArt(){
-  const WT_ASSET_PACK='/assets/wild-trails-asset-pack.glb';
   const wtTextureCache=new Map();
   const wtMaterialCache=new Map();
-  let wtPackPromise=null;
   const wtAmbientMeshes=[];
   const wtCeilingMeshes=[];
 
@@ -449,60 +447,6 @@
   buildEnvironment=function(){
     wtOldBuildEnvironment();
     wtAddMapArt();
-    // The imported art pack loads asynchronously. Procedural geometry remains
-    // the instant fallback, so the game can start even on a slow network.
-    wtLoadArtPack().then(gltf=>wtPlaceArtPack(gltf,world)).catch(e=>console.warn('Premium art pack unavailable; procedural world retained',e));
-  };
-  function wtLoadArtPack(){
-    if(!wtPackPromise)wtPackPromise=loadGameModel(WT_ASSET_PACK).catch(error=>{wtPackPromise=null;throw error});
-    return wtPackPromise;
-  }
-  function wtCloneAsset(gltf,name,x,y,z,scale=1,rotation=0,targetWorld=world){
-    if(!gltf||!targetWorld||targetWorld!==world)return null;
-    const source=gltf.scene.getObjectByName(name);if(!source){console.warn('Missing Wild Trails asset:',name);return null}
-    const clone=SkeletonUtils.clone(source);clone.position.set(x,y,z);clone.rotation.y=rotation;clone.scale.setScalar(scale);
-    clone.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=true;o.userData.wtAsset=true}});
-    targetWorld.add(clone);return clone;
-  }
-  function wtPlaceArtPack(gltf,targetWorld){
-    if(!gltf||targetWorld!==world)return;
-    const put=(name,x,y,z,scale,rotation=0)=>wtCloneAsset(gltf,name,x,y,z,scale,rotation,targetWorld);
-    if(state.map==='garden'){
-      for(const p of [[-65,0,-54],[65,0,-54],[-65,0,54],[65,0,54]])put('WT_Garden_Tree',p[0],0,p[2],1.15);
-      put('WT_Garden_Bench',-18,0,18,1);put('WT_Garden_Bench',18,0,-18,1,Math.PI);
-    }else if(state.map==='street'){
-      for(const z of [-75,0,75]){
-        put('WT_Street_Shopfront',25.0,0,z,.82,Math.PI/2);
-        put('WT_Street_Shopfront',-25.0,0,z,.82,-Math.PI/2);
-      }
-    }else if(state.map==='station'){
-      for(const side of [-1,1])for(const z of [-56,-28,0,28,56])put('WT_Station_Canopy',side*11.3,0,z,.92);
-    }else if(state.map==='home'){
-      put('WT_Home_Armchair',-23,0,5,.92,Math.PI/2);
-    }else if(state.map==='kitchen'){
-      put('WT_Kitchen_Cabinet',-18,0,-19,.82);
-    }else if(state.map==='night'){
-      for(const p of [[-31,0,-35],[31,0,-28],[-29,0,34],[30,0,38]])put('WT_Night_CrystalCluster',p[0],0,p[2],1.25);
-      put('WT_Night_Lantern',-36,0,6,.9);put('WT_Night_Lantern',36,0,-8,.9);
-    }
-  }
-
-  // The bespoke serpent head is built to match the live body's local forward
-  // axis and neck connection. Keep the procedural model as a safe fallback.
-  const wtOldCreatePlayer=createPlayer;
-  createPlayer=function(){
-    wtOldCreatePlayer();
-    if(skins[state.skin]?.id!=='snake')return;
-    const owner=player,skinIndex=state.skin;
-    wtLoadArtPack().then(gltf=>{
-      if(!state.started||state.mode!=='open'||player!==owner||state.skin!==skinIndex)return;
-      const source=gltf.scene.getObjectByName('WT_SnakeHead');if(!source)return;
-      const hero=SkeletonUtils.clone(source);hero.name='Premium jade serpent hero';
-      hero.userData.kind='snake';hero.userData.rig={limbs:[],wings:[],tailParts:[]};
-      hero.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=true}});
-      if(creatureHead?.parent===owner)owner.remove(creatureHead);
-      owner.add(hero);creatureHead=hero;
-    }).catch(e=>console.warn('Custom snake head fallback retained',e));
   };
 
   // Keep indoor roofs visible from normal play height and gently fade them
