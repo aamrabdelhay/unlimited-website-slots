@@ -1141,9 +1141,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     dynamicHazards=[];ambientFliers=[];kitchenPots=[];ratActor=null;tvCanvas=null;tvContext=null;tvTexture=null;
     addMapBoundary();
     if(state.map==='station'){
-      // A second live line of track gives the player a visible train to evade.
-      for(let z=-112;z<=112;z+=3.5)addBox(-18,.12,z,7.4,.18,.38,0x765b43,false);
-      for(const x of [-20.2,-15.8])addBox(x,.32,0,.18,.22,230,0x4c5656,false);
+      // One central rail corridor only; the old phantom second track has been removed.
       const train=buildPassingTrain();train.position.set(0,0,-48);world.add(train);
       dynamicHazards.push({kind:'train',object:train,x:0,z:-48,halfX:3.05,halfZ:18,direction:1,speed:11.5,minZ:-48,maxZ:48});
     }
