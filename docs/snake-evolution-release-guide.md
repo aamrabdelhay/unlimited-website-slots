@@ -59,7 +59,7 @@ Test on a representative mid-range Android phone and a desktop browser:
 ## Known gaps — do not describe these as finished
 
 The current vertical slice does not yet implement:
-- True endless chunk streaming / procedural world expansion.
+- Fully hand-authored landmark layouts and a complete map-specific collision/mission system (the open world now streams lightweight procedural chunks around the player).
 - Unique fully rigged character animations and distinct follower models (eggs, chicks, kittens, cubs, fish trails, etc.) for every skin.
 - The full species-specific food/feeding system, all power-ups, shield/invisibility/magnet abilities, or a balanced progression economy.
 - Distinct handcrafted geometry and collision layouts for every map; map themes are an initial visual pass.
