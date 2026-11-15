@@ -3275,7 +3275,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     const turn=Math.atan2(Math.sin(heading-previousCreatureHeading),Math.cos(heading-previousCreatureHeading));
     creatureHead.rotation.z=clamp(turn,-.16,.16)*.55+(moving?Math.sin(phase)*.018:0);
     previousCreatureHeading=heading;
-    creatureHead.position.y+=(moving?.035:.012-creatureHead.position.y)*.16;
+    creatureHead.position.y+=((moving?.035:.012)-creatureHead.position.y)*.16;
   };
 
   // A refined locomotive with a weighted chassis, inset window bays, bogies,
