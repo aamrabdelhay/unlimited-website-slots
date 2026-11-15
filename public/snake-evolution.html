@@ -507,10 +507,10 @@
     const max=Math.max(w,h,d);
     if(max<18)return;
     let kind=null,rx=1,ry=1;
-    if(h<=.25&&Math.max(w,d)>=18){
+    if(h<=.25&&Math.max(w,d)>=18&&Math.min(w,d)>=1.5){
       kind=state.map==='garden'?'grass':state.map==='street'?'asphalt':state.map==='station'?'concrete':state.map==='home'?'wood':state.map==='kitchen'?'tile':'rock';
       rx=clamp(w/5,1,24);ry=clamp(d/5,1,24);
-    }else if(h>=2&&(w>=18||d>=18)){
+    }else if(h>=5&&(w>=18||d>=18)){
       kind=state.map==='kitchen'?'tile':state.map==='home'?'wood':state.map==='night'?'rock':'plaster';
       rx=clamp(w/6,1,18);ry=clamp(h/4,1,8);
     }
