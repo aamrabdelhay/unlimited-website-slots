@@ -105,14 +105,37 @@ const maps=[
  {id:'night',name:'عالم الليل',desc:'قمر ونجوم وأضواء',sky:0x18283f,ground:0x30473f},
  {id:'kitchen',name:'المطبخ',desc:'خزائن وجزيرة وأرضية',sky:0xb7c9c8,ground:0xb9c2b9}
 ];
-const state={mode:null,map:'garden',skin:0,obstacles:false,coins:0,score:0,best:0,paused:true,started:false,roundOver:false,step:0,shopOnly:false,boostUntil:0,shieldUntil:0,magnetUntil:0};
+const state={mode:null,map:'garden',skin:0,obstacles:true,coins:0,score:0,best:0,paused:true,started:false,roundOver:false,step:0,shopOnly:false,boostUntil:0,shieldUntil:0,magnetUntil:0};
 const safeSave=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
 const getNum=k=>{try{return Math.max(0,Number(localStorage.getItem(k))||0)}catch{return 0}};
 const getOwned=()=>{try{const v=JSON.parse(localStorage.getItem('wild-owned')||'[0]');return Array.isArray(v)?v.map(Number):[0]}catch{return [0]}};
 let owned=getOwned();if(!owned.includes(0))owned.push(0);state.coins=getNum('wild-coins');state.best=getNum('wild-best');
 function updateHud(){ $('coins').textContent=state.coins.toLocaleString();$('score').textContent=state.score.toLocaleString();$('best').textContent=state.best.toLocaleString();safeSave('wild-coins',String(state.coins));safeSave('wild-best',String(state.best));safeSave('wild-owned',JSON.stringify(owned)); }
 function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),1800)}
-function portrait(s){const c='#'+s.color.toString(16).padStart(6,'0'),a='#'+s.accent.toString(16).padStart(6,'0');let extras='';if(['bird','chicken','duck','owl','falcon'].includes(s.id))extras=`<path d="M29 43 L12 31 L16 54 L31 57 M71 43 L88 31 L84 54 L69 57" fill="${a}" stroke="#394333" stroke-width="2"/>`;if(s.id==='owl')extras+=`<circle cx="37" cy="43" r="15" fill="#e9ddc5"/><circle cx="63" cy="43" r="15" fill="#e9ddc5"/>`;if(s.id==='cat')extras+=`<path d="M27 32 L24 7 L43 25 M57 25 L76 7 L73 32" fill="${c}" stroke="#394333" stroke-width="3"/>`;if(s.id==='deer')extras+=`<path d="M36 23 Q18 6 23 0 M23 0 L14 7 M64 23 Q82 6 77 0 M77 0 L86 7" stroke="${a}" stroke-width="5" fill="none" stroke-linecap="round"/>`;if(s.id==='lion')extras+=`<circle cx="50" cy="43" r="37" fill="${a}"/><ellipse cx="50" cy="48" rx="25" ry="23" fill="${c}"/>`;if(s.id==='croc')extras+=`<path d="M61 46 L98 51 L90 67 L60 62Z" fill="${c}" stroke="#394333" stroke-width="2"/>`;if(s.id==='fish')extras+=`<path d="M20 47 L3 31 L3 63Z" fill="${a}" stroke="#394333" stroke-width="2"/>`;const beak=['bird','chicken','duck','falcon'].includes(s.id)?`<path d="M50 48 L38 60 L62 60Z" fill="${s.id==='duck'?'#df8831':a}" stroke="#394333" stroke-width="1.5"/>`:'';return `<svg viewBox="0 0 100 90" aria-hidden="true">${extras}<ellipse cx="50" cy="53" rx="30" ry="29" fill="${c}" stroke="#394333" stroke-width="3"/><ellipse cx="39" cy="48" rx="5" ry="7" fill="#fff"/><ellipse cx="61" cy="48" rx="5" ry="7" fill="#fff"/><circle cx="40" cy="49" r="2.5" fill="#17251e"/><circle cx="62" cy="49" r="2.5" fill="#17251e"/>${beak}<path d="M43 68 Q50 73 57 68" fill="none" stroke="#394333" stroke-width="2.5" stroke-linecap="round"/></svg>`;}
+
+function portrait(s){
+ const id=s.id,body='#'+s.color.toString(16).padStart(6,'0'),accent='#'+s.accent.toString(16).padStart(6,'0');
+ const eye='<ellipse cx="83" cy="38" rx="6" ry="8" fill="#f5efdc"/><circle cx="85" cy="39" r="3.4" fill="#17231b"/><circle cx="86" cy="37.5" r="1.2" fill="#fff"/>';
+ let animal='';
+ if(id==='snake'||id==='worm'){
+  animal='<path d="M25 76C39 20 78 87 92 46S119 18 121 38" fill="none" stroke="'+body+'" stroke-width="19" stroke-linecap="round"/><path d="M25 76C39 20 78 87 92 46S119 18 121 38" fill="none" stroke="'+accent+'" stroke-width="5" stroke-linecap="round"/><ellipse cx="120" cy="35" rx="17" ry="14" fill="'+body+'"/><ellipse cx="120" cy="43" rx="11" ry="5" fill="'+accent+'"/>'+eye;
+ }else if(id==='fish'){
+  animal='<path d="M24 55Q55 14 105 51Q118 61 105 73Q55 105 24 55Z" fill="'+body+'" stroke="#253329" stroke-width="3"/><path d="M25 55L5 30L8 80Z" fill="'+accent+'" stroke="#253329" stroke-width="3"/><path d="M59 38L73 13L88 43Z" fill="'+accent+'"/><path d="M58 76L76 96L90 69Z" fill="'+accent+'"/>'+eye+'<path d="M52 42Q44 57 53 72" stroke="'+accent+'" stroke-width="4" fill="none"/>';
+ }else if(['bird','chicken','duck','owl','falcon'].includes(id)){
+  animal='<path d="M36 64Q28 31 61 25Q92 16 104 49Q109 76 77 81Q46 86 36 64Z" fill="'+body+'" stroke="#253329" stroke-width="3"/><path d="M37 56Q18 32 22 72Q34 83 47 68Z" fill="'+accent+'" stroke="#253329" stroke-width="3"/><path d="M88 56L116 64L90 69Z" fill="'+(id==='duck'?'#ee9b3f':accent)+'" stroke="#253329" stroke-width="2"/>'+eye;
+  if(id==='owl')animal+='<circle cx="67" cy="51" r="15" fill="#efe2c4"/><circle cx="91" cy="51" r="15" fill="#efe2c4"/><path d="M49 30L48 10L67 28M83 28L101 9L101 31" fill="'+accent+'" stroke="#253329" stroke-width="3"/>';
+  if(id==='chicken')animal+='<path d="M61 27Q53 8 67 12Q80 3 82 25" fill="#c65c4d" stroke="#253329" stroke-width="2"/>';
+  if(id==='duck')animal+='<path d="M48 73Q66 88 92 76" stroke="#f4dfab" stroke-width="7" fill="none"/>';
+ }else{
+  animal='<path d="M25 57Q23 36 49 34Q78 18 104 40Q121 52 108 68Q89 84 51 76Q29 73 25 57Z" fill="'+body+'" stroke="#253329" stroke-width="3"/><path d="M69 39Q76 17 101 21Q122 24 118 49Q112 71 89 68L74 60Z" fill="'+body+'" stroke="#253329" stroke-width="3"/>'+eye;
+  animal+='<path d="M37 67L32 96M54 72L51 96M91 69L91 95M105 64L112 91" stroke="'+accent+'" stroke-width="8" stroke-linecap="round"/><path d="M31 96L42 96M48 96L59 96M87 95L98 95M108 91L119 91" stroke="#282820" stroke-width="7" stroke-linecap="round"/><path d="M27 50Q8 50 9 26Q19 36 28 38" stroke="'+accent+'" stroke-width="7" fill="none" stroke-linecap="round"/>';
+  if(id==='cat')animal+='<path d="M83 31L80 4L99 24M105 28L123 5L119 37" fill="'+body+'" stroke="#253329" stroke-width="3"/><path d="M77 61L52 56M80 66L53 68" stroke="#f0dfbe" stroke-width="2"/>';
+  if(id==='deer')animal+='<path d="M86 26Q73 5 82 3M82 10L69 3M110 22Q121 3 119 1M117 9L131 2" stroke="'+accent+'" stroke-width="5" fill="none" stroke-linecap="round"/>';
+  if(id==='lion')animal+='<circle cx="91" cy="44" r="30" fill="'+accent+'" opacity=".92"/><path d="M76 44Q84 22 109 35Q121 51 104 62Q86 68 76 44" fill="'+body+'"/>';
+  if(id==='croc')animal+='<path d="M103 48L138 56L127 68L103 64Z" fill="'+body+'" stroke="#253329" stroke-width="2"/><path d="M61 31L69 20L77 32L85 18L93 30" stroke="'+accent+'" stroke-width="5" fill="none"/>';
+ }
+ return '<svg viewBox="0 0 144 110" aria-hidden="true">'+animal+'</svg>';
+}
 function requestLandscape(){if(!matchMedia('(max-width: 900px)').matches)return;try{const p=document.documentElement.requestFullscreen?.();if(p&&typeof p.then==='function')p.then(()=>{try{screen.orientation?.lock?.('landscape')?.catch?.(()=>{})}catch{}}).catch(()=>{});else{try{screen.orientation?.lock?.('landscape')?.catch?.(()=>{})}catch{}}}catch{}}
 function cardButton(cls,html,handler){const b=document.createElement('button');b.type='button';b.className=cls;b.innerHTML=html;b.addEventListener('click',handler);return b;}
 
@@ -185,15 +208,20 @@ async function loadEnvironmentAssets(){
 }
 
 
-function mat(color,roughness=.82,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
+
+const materialCache=new Map();
+function mat(color,roughness=.82,metalness=0){
+ const key=[color,roughness,metalness].join(':');if(!materialCache.has(key))materialCache.set(key,new THREE.MeshStandardMaterial({color,roughness,metalness}));return materialCache.get(key);
+}
 function mesh(geometry,material,x=0,y=0,z=0,parent=world){const o=new THREE.Mesh(geometry,material);o.position.set(x,y,z);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
 function makeTree(x,z,scale=1){const bark=mat(0x69432f),leaf=[0x315d3c,0x477b4b,0x6b9654][Math.floor(Math.random()*3)];mesh(new THREE.CylinderGeometry(.2*scale,.34*scale,2.15*scale,9),bark,x,1.05*scale,z);for(let i=0;i<4;i++){const a=i*Math.PI*.5+.3,ox=Math.cos(a)*.42*scale,oz=Math.sin(a)*.42*scale;const branch=mesh(new THREE.CylinderGeometry(.045*scale,.085*scale,.9*scale,6),bark,x+ox*.5,2.05*scale,z+oz*.5);branch.rotation.z=ox*.55;branch.rotation.x=oz*.55;mesh(new THREE.SphereGeometry(.92*scale,10,8),mat(leaf),x+ox,2.8*scale+(i%2)*.28*scale,z+oz).scale.set(1.05,.9,1.0)}mesh(new THREE.SphereGeometry(1.02*scale,12,9),mat(leaf),x,3.25*scale,z).scale.set(1.15,.92,1.05);obstacles.push({x,z,r:1.12*scale})}
 function addBox(x,y,z,w,h,d,color,collide=false){mesh(new THREE.BoxGeometry(w,h,d),mat(color),x,y,z);if(collide)obstacles.push({x,z,r:Math.max(w,d)*.48})}
 
+
 function clearWorld(){
  animationMixers.forEach(entry=>{if(entry.mixer)entry.mixer.stopAllAction()});animationMixers=[];
- if(world){scene.remove(world);world.traverse(o=>{if(o.userData.sharedAsset)return;if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose()}})}
- world=new THREE.Group();scene.add(world);bodyParts=[];foodItems=[];obstacles=[];path=[];
+ if(world){scene.remove(world);world.traverse(o=>{if(o.userData.sharedAsset)return;if(o.geometry)o.geometry.dispose()})}
+ world=new THREE.Group();scene.add(world);bodyParts=[];foodItems=[];obstacles=[];path=[];trailMesh=null;
 }
 
 function addBall(x,y,z,sx,sy,sz,color,material){const o=mesh(new THREE.SphereGeometry(1,12,9),material||mat(color),x,y,z);o.scale.set(sx,sy,sz);return o}
@@ -310,7 +338,7 @@ function addStation(){
  const ties=[];for(let z=-104;z<=104;z+=3.5)ties.push({x:0,y:.12,z,sx:8,sy:.20,sz:.42});
  instancedBatch('Railway sleepers',new THREE.BoxGeometry(1,1,1),mat(0x72563f),ties);
  for(const x of [-2.6,2.6]){mesh(new THREE.BoxGeometry(.20,.22,220),mat(0x6c7473,.4,.7),x,.30,0);mesh(new THREE.BoxGeometry(.36,.12,220),mat(0x343d3e,.35,.8),x,.42,0)}
- for(const x of [-9,9]){addBox(x,.30,0,7,.6,210,0xaaa99d);addBox(x,.63,0,7.2,.12,210,0xcac5b7)}
+ for(const x of [-9,9]){addBox(x,.30,0,7,.6,210,0xaaa99d);addBox(x,.63,0,7.2,.12,210,0xcac5b7);for(let z=-100;z<=100;z+=5)obstacles.push({x:x+(x<0?-3.5:3.5),z,r:2.4})}
  // Repeating canopy frames with steel columns and a long curved roof line.
  for(const z of [-45,-30,-15,0,15,30,45]){for(const x of [-11,11])mesh(new THREE.CylinderGeometry(.13,.18,6,8),mat(0x435452,.42,.6),x,3,z);addBox(0,6.1,z,23,.20,.38,0x455e5b)}
  addBox(0,6.45,0,22,.32,112,0x687d76);addBox(0,6.18,0,24,.10,114,0x9c967e);
@@ -328,6 +356,8 @@ function addRoomWalls(){
  // Three continuous walls and an entrance gap on the south side.
  addBox(0,5,-29,68,10,.8,0xc2b6a1);addBox(-34,5,0,.8,10,58,0xb9aa93);addBox(34,5,0,.8,10,58,0xb9aa93);
  addBox(-18,5,29,32,10,.8,0xc2b6a1);addBox(25,5,29,18,10,.8,0xc2b6a1);
+ for(let x=-30;x<=-4;x+=5)obstacles.push({x,z:29,r:2.2});for(let x=18;x<=30;x+=5)obstacles.push({x,z:29,r:2.2});
+ for(let x=-30;x<=30;x+=5){obstacles.push({x,z:-29,r:2.2});obstacles.push({x,z:29,r:2.2})}for(let z=-24;z<=24;z+=5){obstacles.push({x:-34,z,r:2.2});obstacles.push({x:34,z,r:2.2})}
  for(const x of [-30,-22,22,30])addBox(x,5,-28,.22,10,.22,0x6e604e);
 }
 function addHome(){
@@ -350,7 +380,7 @@ function addHome(){
  for(const [x,z] of [[-28,-23],[28,22]]){mesh(new THREE.CylinderGeometry(.52,.68,.75,12),mat(0x9a6348),x,.38,z);instancedBatch('House plants',new THREE.IcosahedronGeometry(.8,1),mat(0x3b754a),[{x,y:1.55,z,sx:.75,sy:1.05,sz:.75}])}
 }
 function addKitchen(){
- addBox(0,.05,0,68,.12,58,0xc9c7ba);
+ addRoomWalls();addBox(0,.05,0,68,.12,58,0xc9c7ba);
  // L-shaped counter with separate cabinets, stone worktop and handles.
  for(let i=0;i<8;i++){const x=-24+i*6;addBox(x,1.15,-25,5.7,2.3,3.5,0x687f79,true);addBox(x,2.38,-25,5.95,.18,3.8,0xe2ded2);addBox(x,1.25,-23.18,4.9,1.6,.08,0x9eaaa0);addBox(x,1.25,-23.08,.12,.09,.08,0xd8c9a6)}
  addBox(28,1.15,-9,3.5,2.3,31,0x687f79,true);addBox(28,2.38,-9,3.8,.18,31.4,0xe2ded2);
@@ -404,6 +434,7 @@ function animalLoft(parent,sections,material,radial=20){
  const vertices=[],indices=[];
  for(const [z,cx,cy,rx,ry] of sections)for(let j=0;j<radial;j++){const a=j/radial*Math.PI*2;vertices.push(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry,z)}
  for(let i=0;i<sections.length-1;i++)for(let j=0;j<radial;j++){const a=i*radial+j,b=i*radial+(j+1)%radial;indices.push(a,b,b+radial,a+radial)}
+ indices.push(...Array.from({length:radial},(_,j)=>radial-1-j));const last=(sections.length-1)*radial;indices.push(...Array.from({length:radial},(_,j)=>last+j));
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
  const o=new THREE.Mesh(g,material);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o;
 }
