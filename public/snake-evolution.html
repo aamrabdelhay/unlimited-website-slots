@@ -1144,8 +1144,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       // A second live line of track gives the player a visible train to evade.
       for(let z=-112;z<=112;z+=3.5)addBox(-18,.12,z,7.4,.18,.38,0x765b43,false);
       for(const x of [-20.2,-15.8])addBox(x,.32,0,.18,.22,230,0x4c5656,false);
-      const train=buildPassingTrain();train.position.set(0,0,-54);world.add(train);
-      dynamicHazards.push({kind:'train',object:train,x:0,z:-54,halfX:3.05,halfZ:18,direction:1,speed:11.5,minZ:-54,maxZ:54});
+      const train=buildPassingTrain();train.position.set(0,0,-48);world.add(train);
+      dynamicHazards.push({kind:'train',object:train,x:0,z:-48,halfX:3.05,halfZ:18,direction:1,speed:11.5,minZ:-48,maxZ:48});
     }
     if(state.map==='street'){
       const colors=[0xb54c42,0x397681,0xd0a34c,0x52795b,0x69717a,0xb5b1a1];
@@ -3079,7 +3079,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   const edgeTrunkGeo=new THREE.CylinderGeometry(.18,.34,2.9,12,3),edgeCrownGeo=[deformCanopy(3),deformCanopy(7),deformCanopy(12)];
   const edgeTrunkMat=material(0x60412f,.96),edgeLeafMats=[0x294f38,0x356544,0x4b7748].map(c=>material(c,.96));
   function naturalTree(x,z,scale=1,seed=0,solid=true){
-    const trunk=mesh(edgeTrunkGeo,edgeTrunkMat,x,1.42*scale,z);trunk.name="Tapered natural tree trunk";
+    const trunk=mesh(edgeTrunkGeo,edgeTrunkMat,x,1.42*scale,z);trunk.scale.setScalar(scale);trunk.name="Tapered natural tree trunk";
     const tiers=[{y:2.25,r:1.35,h:1.42,dx:0,dz:0},{y:3.18,r:1.10,h:1.40,dx:.22,dz:.08},{y:4.08,r:.78,h:1.12,dx:-.13,dz:-.10}];
     tiers.forEach((t,i)=>{
       const crown=mesh(edgeCrownGeo[i],edgeLeafMats[(seed+i)%3],x+t.dx*scale,t.y*scale,z+t.dz*scale);
@@ -3099,7 +3099,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     for(let i=0;i<=segments;i++){
       const u=i/segments,p=route.getPointAt(u),t=route.getTangentAt(u),side=V(-t.z,0,t.x).normalize();
       points.push(p.x+side.x*halfWidth,0,p.z+side.z*halfWidth,p.x-side.x*halfWidth,0,p.z-side.z*halfWidth);
-      if(i<segments){const a=i*2,b=a+1,c=a+2,d=a+3;indices.push(a,b,c,b,d,c)}
+      if(i<segments){const a=i*2,b=a+1,c=a+2,d=a+3;indices.push(a,c,b,b,c,d)}
     }
     const ribbon=new THREE.BufferGeometry();ribbon.setAttribute("position",new THREE.Float32BufferAttribute(points,3));ribbon.setIndex(indices);ribbon.computeVertexNormals();
     const pathMesh=new THREE.Mesh(ribbon,trail);pathMesh.receiveShadow=true;world.add(pathMesh);
@@ -3424,6 +3424,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       return url;
     }catch(e){console.warn("3D creature stage render failed",skin.id,e);return null}
   };
+  // Refresh the opening screen after all V4 renderers have replaced the placeholders.
+  showStep(0);updateHud();
 })();
 
 </script>
