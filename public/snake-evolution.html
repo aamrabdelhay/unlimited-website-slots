@@ -130,14 +130,14 @@ function finishGame(reason){
  $('finalScore').textContent=state.score.toLocaleString();$('finalBest').textContent=state.best.toLocaleString();$('finalCoins').textContent=state.coins.toLocaleString();
  $('resultPanel').classList.remove('hidden');$('controls').classList.remove('show');
 }
-function closeResultToMenu(){$('resultPanel').classList.add('hidden');state.roundOver=false;state.paused=true;$('overlay').classList.remove('hidden');state.shopOnly=false;showStep(0)}
+function closeResultToMenu(){$('resultPanel').classList.add('hidden');state.roundOver=false;state.paused=true;state.started=false;$('overlay').classList.remove('hidden');state.shopOnly=false;showStep(0)}
 function restartRound(){$('resultPanel').classList.add('hidden');state.roundOver=false;state.score=0;state.paused=false;state.boost=0;state.shieldUntil=0;state.magnetUntil=0;startGame()}
 $('restartBtn').onclick=restartRound;$('resultMenuBtn').onclick=closeResultToMenu;
-$('menuBtn').onclick=$('menuQuick').onclick=()=>{state.paused=true;state.roundOver=false;state.shopOnly=false;$('resultPanel').classList.add('hidden');$('overlay').classList.remove('hidden');showStep(0)};
+$('menuBtn').onclick=$('menuQuick').onclick=()=>{state.paused=true;state.roundOver=false;state.started=false;state.shopOnly=false;$('resultPanel').classList.add('hidden');$('overlay').classList.remove('hidden');showStep(0)};
 state.shopOnly=false;state.shopReturnToGame=false;state.shopWasPaused=true;
-$('shopBtn').onclick=()=>{state.shopOnly=true;state.shopReturnToGame=state.started;state.shopWasPaused=state.paused;if(state.started)state.paused=true;$('resultPanel').classList.add('hidden');$('overlay').classList.remove('hidden');showStep(2)};
+$('shopBtn').onclick=()=>{if(state.roundOver){toast('افتح القائمة لبدء جولة جديدة');return}state.shopOnly=true;state.shopReturnToGame=state.started;state.shopWasPaused=state.paused;if(state.started)state.paused=true;$('resultPanel').classList.add('hidden');$('overlay').classList.remove('hidden');showStep(2)};
 $('nextBtn').onclick=()=>{
- if(state.shopOnly){state.shopOnly=false;if(state.shopReturnToGame){state.paused=state.shopWasPaused;$('pauseBtn').textContent=state.paused?'▶ استكمال':'Ⅱ إيقاف';$('overlay').classList.add('hidden')}else showStep(0);return}
+ if(state.shopOnly){state.shopOnly=false;if(state.shopReturnToGame){state.paused=state.shopWasPaused;$('pauseBtn').textContent=state.paused?'▶ استكمال':'Ⅱ إيقاف';$('overlay').classList.add('hidden');if(!state.paused){if(state.mode==='open')animate();else if(classic&&classic.tick)classic.tick(performance.now())}}else showStep(0);return}
  if(state.step===0&&!state.mode){toast('اختر المود أولاً');return}if(state.step<2)showStep(state.step+1);else startGame();
 };
 $('pauseBtn').onclick=()=>{if(state.roundOver)return;state.paused=!state.paused;$('pauseBtn').textContent=state.paused?'▶ استكمال':'Ⅱ إيقاف';if(state.paused)toast('اللعبة متوقفة');else if(state.mode==='open')animate();else if(classic&&classic.tick)classic.tick(performance.now())};
@@ -296,8 +296,8 @@ startGame=async function(){
  $('help').style.display=state.mode==='old'?'block':'none';
  if(state.mode==='old'){initClassic();updateWallet();return}
  toast('جارٍ تجهيز العالم ثلاثي الأبعاد…');
- if(!await loadThree()){state.paused=true;$('overlay').classList.remove('hidden');showStep(0);toast('تعذر تحميل محرك 3D. المود الكلاسيكي ما زال متاحًا.');return}
- initRenderer();if(!renderer){state.paused=true;$('overlay').classList.remove('hidden');showStep(0);return}
+ if(!await loadThree()){state.paused=true;state.started=false;$('overlay').classList.remove('hidden');showStep(0);toast('تعذر تحميل محرك 3D. المود الكلاسيكي ما زال متاحًا.');return}
+ initRenderer();if(!renderer){state.paused=true;state.started=false;$('overlay').classList.remove('hidden');showStep(0);return}
  makeEnvironment();createPlayer();updateWallet();clock.start();cancelAnimationFrame(raf);animate();
 };
 animate=function(){if(!renderer||state.paused||state.mode!=='open'||state.roundOver)return;const dt=Math.min(clock.getDelta(),.04);updateOpen(dt);renderer.render(scene,camera);if(!state.paused&&!state.roundOver)raf=requestAnimationFrame(animate)};
