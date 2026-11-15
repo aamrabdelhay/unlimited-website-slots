@@ -3705,7 +3705,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   for(const [id,o] of remoteObjects)if(!players.has(id)){world.remove(o.group);remoteObjects.delete(id)}
  }
  function sendUpdate(){if(!mpActive||!hasStarted||!socket||socket.readyState!==WebSocket.OPEN||!player||!world||state.roundOver)return;const trail=(path||[]).filter((_,i)=>i%6===0).slice(0,55).map(v=>({x:v.x,z:v.z}));try{socket.send(JSON.stringify({type:"update",x:player.position.x,z:player.position.z,heading,score:state.score,alive:!mpDead,trail}))}catch{}}
- let lastSent=0;const oldUpdateOpen=updateOpen;updateOpen=function(dt,t){oldUpdateOpen(dt,t);if(!mpActive||!hasStarted)return;const now=performance.now();if(now-lastSent>90){lastSent=now;sendUpdate()}};
+ const oldUpdateOpen=updateOpen;updateOpen=function(dt,t){oldUpdateOpen(dt,t);if(!mpActive||!hasStarted)return;const now=performance.now();if(now-lastSent>90){lastSent=now;sendUpdate()}};
  const oldStartOpenGame=startOpenGame;startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&hasStarted&&player&&world){clearRemote();syncRemotePlayers([...players.values()]);lastSent=0;sendUpdate()}};
  const oldFinishRound=finishRound;finishRound=function(reason){if(mpActive&&hasStarted){sendUpdate();$mp("mpStatus").textContent="انتهت الجولة"}oldFinishRound(reason)};
  window.addEventListener("beforeunload",()=>{if(socket)try{socket.close()}catch{}});
