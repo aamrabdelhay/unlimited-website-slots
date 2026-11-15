@@ -793,6 +793,7 @@ function bindStick(padId,knobId,callback){
  pad.addEventListener('pointermove',e=>{if(e.pointerId===activePointer){e.preventDefault();move(e)}},{passive:false});
  const finish=e=>{if(e.pointerId===activePointer)reset()};pad.addEventListener('pointerup',finish);pad.addEventListener('pointercancel',finish);pad.addEventListener('lostpointercapture',reset);pad.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('blur',reset);
 }
+bindStick('movePad','moveKnob',(x,y)=>moveInput={x,y});
 function applyStickScale(value){const n=clamp(Number(value)||100,70,155);document.documentElement.style.setProperty('--stick-scale',String(n/100));$('stickScale').value=String(n);$('stickScaleValue').textContent=n+'%';try{localStorage.setItem('wild-stick-scale',String(n))}catch{}}
 function bindSettings(){let saved=100;try{saved=Number(localStorage.getItem('wild-stick-scale'))||100}catch{}applyStickScale(saved);const toggle=()=>$('settingsPanel').classList.toggle('hidden');$('settingsBtn').addEventListener('click',toggle);$('settingsMenuBtn').addEventListener('click',toggle);$('settingsClose').addEventListener('click',()=>$('settingsPanel').classList.add('hidden'));$('stickScale').addEventListener('input',e=>applyStickScale(e.target.value));document.addEventListener('pointerdown',e=>{if(!$('settingsPanel').contains(e.target)&&e.target!==$('settingsBtn')&&e.target!==$('settingsMenuBtn'))$('settingsPanel').classList.add('hidden')})}
 function bindDirectGameGestures(){
