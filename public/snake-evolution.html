@@ -2604,20 +2604,20 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     if(state.map!=='home'&&state.map!=='kitchen')return;
     const kitchen=state.map==='kitchen',base=kitchen?0x53675f:0x57483a,beam=kitchen?0x354c45:0x3c2e25;
     const roofMat=new THREE.MeshStandardMaterial({color:base,roughness:.88,side:THREE.DoubleSide,transparent:true,opacity:.58,depthWrite:false});
-    const roof=mesh(new THREE.PlaneGeometry(196,196),roofMat,0,12.15,0,world);roof.rotation.x=-Math.PI/2;roof.name='Translucent enclosed interior ceiling';roof.userData.wtCeiling=true;roof.castShadow=false;roof.receiveShadow=false;wtCeilingMeshes.push(roof);
-    for(let p=-88;p<=88;p+=22){
-      wtDecorBox(p,11.92,-0,196,.20,.34,beam,.9);
-      wtDecorBox(0,11.92,p,.34,.20,196,beam,.9);
+    const roof=mesh(new THREE.PlaneGeometry(68,58),roofMat,0,10.25,0,world);roof.rotation.x=-Math.PI/2;roof.name='Translucent enclosed interior ceiling';roof.userData.wtCeiling=true;roof.castShadow=false;roof.receiveShadow=false;wtCeilingMeshes.push(roof);
+    for(let p=-28;p<=28;p+=14){
+      wtDecorBox(p,10.05,0,58,.20,.34,beam,.9);
+      wtDecorBox(0,10.05,p,.34,.20,68,beam,.9);
     }
     for(const side of [-1,1]){
-      wtDecorBox(side*97.5,11.68,0,.5,.42,196,base,.86);
-      wtDecorBox(0,11.68,side*97.5,196,.42,.5,base,.86);
+      wtDecorBox(side*33.75,10.05,0,.5,.30,58,base,.86);
+      wtDecorBox(0,10.05,side*28.75,68,.30,.5,base,.86);
     }
-    const lights=kitchen?[-36,-12,12,36]:[-44,-15,15,44];
+    const lights=kitchen?[-22,0,22]:[-21,0,21];
     for(const x of lights)for(const z of lights){
-      const stem=mesh(new THREE.CylinderGeometry(.035,.035,.85,8),mat(0x3b4440,.5,.55),x,11.35,z,world);
-      const shade=mesh(new THREE.CylinderGeometry(.24,.52,.25,16),mat(kitchen?0xd0c6ae:0x9c7953,.48,.2),x,10.88,z,world);
-      const glow=mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshBasicMaterial({color:kitchen?0xffe1ae:0xffd59a,transparent:true,opacity:.86,depthWrite:false}),x,10.72,z,world);
+      const stem=mesh(new THREE.CylinderGeometry(.035,.035,.85,8),mat(0x3b4440,.5,.55),x,9.78,z,world);
+      const shade=mesh(new THREE.CylinderGeometry(.24,.52,.25,16),mat(kitchen?0xd0c6ae:0x9c7953,.48,.2),x,9.32,z,world);
+      const glow=mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshBasicMaterial({color:kitchen?0xffe1ae:0xffd59a,transparent:true,opacity:.86,depthWrite:false}),x,9.16,z,world);
       wtAmbientMeshes.push({glow,shade,phase:x*.13+z*.07});
     }
   }
@@ -2689,23 +2689,23 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   function wtAddIndoorDetails(){
     const kitchen=state.map==='kitchen';
     const trim=kitchen?0xa9bcb2:0x9d7b58,frame=kitchen?0x405c53:0x56402f;
-    for(const z of [-96,96])wtDecorBox(0,.58,z,192,.24,.32,trim,.82);
-    for(const x of [-96,96])wtDecorBox(x,.58,0,.32,.24,192,trim,.82);
+    for(const z of [-29,29])wtDecorBox(0,.58,z,68,.24,.32,trim,.82);
+    for(const x of [-34,34])wtDecorBox(x,.58,0,.32,.24,58,trim,.82);
     if(kitchen){
       // Extra upper storage, vent hood and restrained backsplash relief.
-      for(const x of [-34,-18,0,18,34]){
-        wtDecorBox(x,6.55,-96,7.6,2.8,.42,0x617e73,.48,.04);
-        wtDecorBox(x,6.55,-95.74,7.0,2.35,.06,0x8fa79a,.68);
-        wtDecorBox(x,6.55,-95.68,.09,2.2,.08,frame,.5,.2);
-        wtDecorBox(x+2.7,6.6,-95.58,.12,.56,.12,0xc7ae7c,.35,.65);
+      for(const x of [-24,-12,0,12,24]){
+        wtDecorBox(x,6.55,-28.45,7.6,2.8,.42,0x617e73,.48,.04);
+        wtDecorBox(x,6.55,-28.20,7.0,2.35,.06,0x8fa79a,.68);
+        wtDecorBox(x,6.55,-28.12,.09,2.2,.08,frame,.5,.2);
+        wtDecorBox(x+2.7,6.6,-28.02,.12,.56,.12,0xc7ae7c,.35,.65);
       }
-      wtDecorBox(-44,9.3,-95.5,8.5,.5,1.0,steel,.34,.72);
+      wtDecorBox(-22,9.3,-28.15,8.5,.5,1.0,0x3a4948,.34,.72);
     }else{
       // Picture frames, curtain rails and wall sconces make the home read as lived-in.
-      for(const x of [-58,-22,22,58]){
-        wtDecorBox(x,7.0,-96,6.8,4.2,.20,frame,.72);
-        wtDecorBox(x,7.0,-95.86,6.2,3.6,.07,0x9bb1a6,.42);
-        wtDecorBox(x,4.0,-95.64,7.2,.16,.20,trim,.62);
+      for(const x of [-24,-8,8,24]){
+        wtDecorBox(x,7.0,-28.65,6.8,4.2,.20,frame,.72);
+        wtDecorBox(x,7.0,-28.50,6.2,3.6,.07,0x9bb1a6,.42);
+        wtDecorBox(x,4.0,-28.28,7.2,.16,.20,trim,.62);
       }
     }
   }
