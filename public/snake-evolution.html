@@ -76,7 +76,7 @@
 
 /* Wild Trails visual + gameplay pass */
 .hud{top:calc(var(--safe-top) + 8px);left:10px;right:10px;align-items:center}
-.hud .brand,.hud .stat:has(#coins),.hud .stat:has(#best),#shopBtn{display:none!important}
+.hud .brand,.hud .stat:has(#coins),.hud .stat:has(#best),#shopBtn,#pauseBtn{display:none!important}
 .hud .stat:has(#score){min-width:58px;min-height:30px;padding:4px 9px;border-radius:24px;background:#101a1590;border-color:#ffffff20;backdrop-filter:blur(12px)}
 .hud .stat:has(#score) b{font-size:15px}
 .hud .hud-btn{min-height:30px;padding:0 11px;border-radius:22px;background:#101a1590;border-color:#ffffff20;backdrop-filter:blur(12px)}
@@ -168,7 +168,7 @@
     const doorHalf=2.35, segment=(d-2*doorHalf)/2;
     addBox(frontX,h/2,z-(doorHalf+segment/2),.62,h,segment,sideColor,true);
     addBox(frontX,h/2,z+(doorHalf+segment/2),.62,h,segment,sideColor,true);
-    addBox(frontX,h-.55,z,.68,1.1,doorHalf*2,0x514d43,true);
+    addBox(frontX,h-.55,z,.68,1.1,doorHalf*2,0x514d43,false);
     for(const dz of [-doorHalf,doorHalf]){
       addBox(frontX,h/2,z+dz,.18,h,.18,0x514b40,true);
       addBox(frontX+roadFacing*.08,3.7,z+dz*1.55,.08,1.4,1.05,0x77a0a4,false);
@@ -350,7 +350,7 @@
   createPlayer=function(){
     oldCreatePlayer();
     const starts={
-      garden:[0,70],street:[0,78],station:[0,82],home:[8,19],kitchen:[8,19],night:[0,70]
+      garden:[0,70],street:[0,78],station:[0,82],home:[0,19],kitchen:[8,19],night:[0,70]
     };
     const p=starts[state.map]||[0,60];
     player.position.set(p[0],0,p[1]);
@@ -561,7 +561,7 @@
   classicFrame=function(t){
     raf=0;if(state.paused||state.roundOver||!state.started||!classic)return;
     if(!classic.power&&t>classic.nextPowerAt){
-      const p=spawnClassicFood();
+      let p=spawnClassicFood();for(let n=0;n<30&&p.x===classic.food.x&&p.y===classic.food.y;n++)p=spawnClassicFood();
       classic.power={x:p.x,y:p.y,type:Math.random()<.5?'speed':'phase',expiresAt:t+5000};
       classic.nextPowerAt=t+7500+Math.random()*4500;
     }
@@ -653,6 +653,7 @@
   // Render genuine Three.js stage previews instead of the old flat SVG/emoji-like art.
   async function ensureThumbnailRenderer(){
     if(!await loadThree())return null;
+    if(thumbnailRenderer?.getContext?.()?.getContextAttributes?.()?.alpha===false){thumbnailRenderer.dispose();thumbnailRenderer=null;}
     if(!thumbnailRenderer){
       thumbnailRenderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'low-power'});
       thumbnailRenderer.setPixelRatio(1);thumbnailRenderer.setClearColor(0x000000,0);
@@ -775,6 +776,112 @@
     oldShowStep(step);
     if(step===1)requestAnimationFrame(()=>renderMapPreviews());
     if(step===2)requestAnimationFrame(()=>renderCreaturePreviews());
+  };
+
+
+  // Smoother species-specific gait, with a small head/shoulder rhythm that
+  // follows the direction of travel instead of a disconnected body bob.
+  const baseCreatureAnimation=animateCreature;
+  animateCreature=function(t,moving){
+    baseCreatureAnimation(t,moving);
+    if(!creatureHead)return;
+    const kind=creatureHead.userData.kind||skins[state.skin].id;
+    const phase=t*.017;
+    if(kind==='snake'||kind==='worm'){
+      creatureHead.rotation.z=moving?Math.sin(phase)*.045:Math.sin(t*.003)*.012;
+      creatureHead.rotation.x=moving?Math.sin(phase*.65)*.025:0;
+    }else if(kind==='fish'){
+      creatureHead.rotation.y=moving?Math.sin(phase)*.11:Math.sin(t*.003)*.025;
+      creatureHead.rotation.z=moving?Math.sin(phase*.7)*.035:0;
+    }else{
+      creatureHead.rotation.x=moving?Math.sin(phase*2)*.035:Math.sin(t*.002)*.012;
+      creatureHead.rotation.z=moving?Math.sin(phase)*.018:0;
+    }
+  };
+
+  // Map-specific 2D scenery details: facades, rails, furniture silhouettes,
+  // vegetation and lighting are drawn around the playable field.
+  const classicSceneDecoration=drawClassic;
+  drawClassic=function(){
+    classicSceneDecoration();
+    if(!classic)return;
+    const c=classic,ctx=c.ctx,w=c.w,h=c.h,cell=c.cell;
+    ctx.save();ctx.globalAlpha=.72;
+    const panel=(x,y,pw,ph,fill,stroke='#101a14')=>{
+      ctx.fillStyle=fill;ctx.fillRect(x,y,pw,ph);
+      ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(1,cell*.07);ctx.strokeRect(x,y,pw,ph);
+    };
+    if(state.map==='street'){
+      for(const side of [0,w-cell*2]){
+        panel(side+cell*.12,cell*.12,cell*1.55,cell*2.8,'#9a8973');
+        for(let row=0;row<2;row++)for(let col=0;col<2;col++)
+          panel(side+cell*.28+col*cell*.64,cell*.35+row*cell*.8,cell*.42,cell*.54,'#8bb1b5','#d8d0ba');
+        panel(side+cell*.62,cell*2.08,cell*.52,cell*.72,'#4f665b');
+      }
+      ctx.fillStyle='#e8e1c7';ctx.fillRect(w*.5-cell*.045,0,cell*.09,h);
+      for(let y=0;y<h;y+=cell*3.2)ctx.fillRect(w*.5-cell*.045,y,cell*.09,cell*1.25);
+    }else if(state.map==='station'){
+      for(let y=0;y<h;y+=cell*1.2){ctx.fillStyle='#8a6a4b';ctx.fillRect(w*.30,y,cell*1.45,cell*.17)}
+      for(const x of [w*.39,w*.61]){
+        ctx.fillStyle='#303a3b';ctx.fillRect(x,0,cell*.13,h);
+        ctx.fillStyle='#b9c2b9';ctx.fillRect(x-cell*.09,0,cell*.05,h);
+      }
+      panel(w*.02,cell*.25,cell*1.9,cell*1.2,'#536d68');
+      panel(w*.78,cell*.25,cell*1.9,cell*1.2,'#536d68');
+    }else if(state.map==='home'){
+      for(let y=cell*.2;y<h;y+=cell*1.35){ctx.strokeStyle='#5a4033';ctx.lineWidth=Math.max(1,cell*.035);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+      panel(cell*.18,cell*.2,cell*1.6,cell*1.2,'#cbb89b');
+      panel(cell*.35,cell*.48,cell*1.1,cell*.52,'#65837c');
+      panel(w-cell*2.0,cell*.2,cell*1.75,cell*1.45,'#59463a');
+      panel(w-cell*1.85,cell*.35,cell*1.45,cell*.9,'#8ab0b7','#d6c6a8');
+    }else if(state.map==='kitchen'){
+      for(let x=cell*.15;x<w-cell*1.8;x+=cell*2.1){
+        panel(x,cell*.12,cell*1.65,cell*1.15,'#5d7971');
+        ctx.strokeStyle='#e6e0d4';ctx.lineWidth=Math.max(1,cell*.06);
+        ctx.beginPath();ctx.moveTo(x+cell*.82,cell*.18);ctx.lineTo(x+cell*.82,cell*1.17);ctx.stroke();
+        ctx.fillStyle='#aebdb5';ctx.fillRect(x+cell*.72,cell*.58,cell*.2,cell*.08);
+      }
+      panel(w-cell*1.85,cell*.15,cell*1.5,cell*2.2,'#bac6bf');
+      ctx.fillStyle='#3b4745';ctx.fillRect(w-cell*1.68,cell*.65,cell*1.16,cell*.8);
+      for(const x of [w-cell*1.46,w-cell*1.02]){
+        ctx.strokeStyle='#353f3e';ctx.lineWidth=Math.max(2,cell*.12);
+        ctx.beginPath();ctx.arc(x,cell*.93,cell*.16,0,Math.PI*2);ctx.stroke();
+      }
+    }else if(state.map==='garden'){
+      for(const side of [cell*.3,w-cell*1.3])for(let y=cell*.3;y<h;y+=cell*2.1){
+        ctx.fillStyle='#67462f';ctx.fillRect(side+cell*.25,y+cell*.3,cell*.22,cell*.8);
+        ctx.fillStyle='#2d663c';ctx.beginPath();ctx.arc(side+cell*.35,y+cell*.22,cell*.62,0,Math.PI*2);ctx.fill();
+      }
+      ctx.fillStyle='#d6c194';ctx.fillRect(w*.46,0,cell*.22,h);
+      ctx.fillStyle='#2b7d8c';ctx.beginPath();ctx.ellipse(cell*1.25,h*.78,cell*.9,cell*.56,-.2,0,Math.PI*2);ctx.fill();
+    }else{
+      ctx.fillStyle='#e7d8a9';ctx.beginPath();ctx.arc(w-cell*1.4,cell*1.5,cell*.62,0,Math.PI*2);ctx.fill();
+      for(const side of [0,w-cell*1.65])for(let y=cell*2.4;y<h;y+=cell*2.7){
+        ctx.fillStyle='#62462f';ctx.fillRect(side+cell*.55,y,cell*.25,cell*1.5);
+        ctx.fillStyle='#204b3a';ctx.beginPath();ctx.arc(side+cell*.66,y,cell*.76,0,Math.PI*2);ctx.fill();
+      }
+    }
+    ctx.restore();
+  };
+
+  // The TV display uses the chosen species' palette and tracks the player.
+  const previousHomeTvDraw=animateWorldDetails;
+  animateWorldDetails=function(dt,t,now){
+    previousHomeTvDraw(dt,t,now);
+    if(tvContext&&tvTexture&&state.map==='home'){
+      const chosen=skins[state.skin],rgb='#'+chosen.color.toString(16).padStart(6,'0');
+      tvContext.fillStyle='#101923';tvContext.fillRect(0,0,256,144);
+      tvContext.fillStyle='#263f39';tvContext.fillRect(0,100,256,44);
+      tvContext.fillStyle='#91b5b8';tvContext.fillRect(0,0,256,100);
+      tvContext.fillStyle='#e8ce91';tvContext.beginPath();tvContext.arc(210,24,12,0,Math.PI*2);tvContext.fill();
+      const offset=Math.sin(t*.0012)*35,cy=91,cx=128+offset;
+      tvContext.strokeStyle=rgb;tvContext.lineWidth=18;tvContext.lineCap='round';tvContext.lineJoin='round';
+      tvContext.beginPath();tvContext.moveTo(cx-50,cy+10);tvContext.bezierCurveTo(cx-28,cy-24,cx+12,cy+24,cx+38,cy-8);tvContext.stroke();
+      tvContext.fillStyle=rgb;tvContext.beginPath();tvContext.ellipse(cx+45,cy-17,17,14,0,0,Math.PI*2);tvContext.fill();
+      tvContext.fillStyle='#18231e';tvContext.beginPath();tvContext.arc(cx+50,cy-20,2.5,0,Math.PI*2);tvContext.fill();
+      tvContext.fillStyle='#f5e8c8';tvContext.font='bold 12px sans-serif';tvContext.fillText(chosen.name.toUpperCase(),12,18);
+      tvTexture.needsUpdate=true;
+    }
   };
 
   // Remove redundant instructional strings and keep the gameplay HUD minimal.
