@@ -663,7 +663,7 @@ function updateOpen(dt,t){
  if(inputLen>.10){const forwardX=-Math.sin(cameraYaw),forwardZ=-Math.cos(cameraYaw),rightX=Math.cos(cameraYaw),rightZ=-Math.sin(cameraYaw),vx=rightX*ix+forwardX*(-iy),vz=rightZ*ix+forwardZ*(-iy),target=Math.atan2(vx,-vz);let delta=Math.atan2(Math.sin(target-heading),Math.cos(target-heading));heading+=clamp(delta,-7.2*dt,7.2*dt)}
  const boost=state.boostUntil>now?1.65:1,speed=6.3*boost*inputLen,nextX=player.position.x+Math.sin(heading)*speed*dt,nextZ=player.position.z-Math.cos(heading)*speed*dt;
  if(Math.abs(nextX)>105||Math.abs(nextZ)>105){finishRound('وصلت إلى حافة العالم. ارجع إلى منطقة الاستكشاف.');return}
- let resolvedX=nextX,resolvedZ=nextZ;if(state.obstacles&&state.shieldUntil<now&&collidesAt(resolvedX,resolvedZ,.78)){const xFree=!collidesAt(resolvedX,player.position.z,.78),zFree=!collidesAt(player.position.x,resolvedZ,.78);if(xFree&&(!zFree||Math.abs(nextX-player.position.x)>=Math.abs(nextZ-player.position.z)))resolvedZ=player.position.z;else if(zFree)resolvedX=player.position.x;else{resolvedX=player.position.x;resolvedZ=player.position.z}}
+ let resolvedX=nextX,resolvedZ=nextZ;if(state.obstacles&&collidesAt(resolvedX,resolvedZ,.78)){const xFree=!collidesAt(resolvedX,player.position.z,.78),zFree=!collidesAt(player.position.x,resolvedZ,.78);if(xFree&&(!zFree||Math.abs(nextX-player.position.x)>=Math.abs(nextZ-player.position.z)))resolvedZ=player.position.z;else if(zFree)resolvedX=player.position.x;else{resolvedX=player.position.x;resolvedZ=player.position.z}}
  player.position.x=resolvedX;player.position.z=resolvedZ;player.rotation.y=heading;path.unshift(player.position.clone());if(path.length>360)path.length=360;
  updateTrailMesh(t);
  const moving=inputLen>.1;animateCreature(t,moving);
