@@ -3533,12 +3533,17 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     const backup=readBackup();if(!backup)return;
     const rawCoins=readRaw("wild-coins"),rawBest=readRaw("wild-best"),rawOwned=readRaw("wild-owned");
     // Existing keys remain authoritative when present, including a deliberate zero balance.
-    if(rawCoins===null||rawCoins.trim()===""||!Number.isFinite(Number(rawCoins)))state.coins=Math.max(0,Math.floor(Number(backup.coins)||0));
-    if(rawBest===null||rawBest.trim()===""||!Number.isFinite(Number(rawBest)))state.best=Math.max(0,Math.floor(Number(backup.best)||0));
-    if(rawOwned===null){
-      const migrated=Array.isArray(backup.owned)?backup.owned:[0];
-      owned=[...new Set([0,...migrated.map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<skins.length)])];
-    }
+    const savedCoins=Math.max(0,Math.floor(Number(backup.coins)||0));
+    const savedBest=Math.max(0,Math.floor(Number(backup.best)||0));
+    // The legacy page writes its initial HUD before this migration block runs.
+    // If that write replaced a missing key with zero, the cookie snapshot wins.
+    if(rawCoins===null||rawCoins.trim()===""||!Number.isFinite(Number(rawCoins))||Number(rawCoins)!==savedCoins)state.coins=savedCoins;
+    if(rawBest===null||rawBest.trim()===""||!Number.isFinite(Number(rawBest))||Number(rawBest)!==savedBest)state.best=savedBest;
+    const savedOwned=[...new Set([0,...(Array.isArray(backup.owned)?backup.owned:[]).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<skins.length)])].sort((a,b)=>a-b);
+    let currentOwned=[];
+    try{currentOwned=rawOwned?JSON.parse(rawOwned).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<skins.length):[]}catch{}
+    currentOwned=[...new Set([0,...currentOwned])].sort((a,b)=>a-b);
+    if(rawOwned===null||JSON.stringify(currentOwned)!==JSON.stringify(savedOwned))owned=savedOwned;
     if(Number.isInteger(backup.skin)&&backup.skin>=0&&backup.skin<skins.length)state.skin=backup.skin;
   }
   restoreProgress();
