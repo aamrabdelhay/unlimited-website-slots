@@ -50,10 +50,10 @@ Manual game QA:
 2. Open the game from the dashboard and directly at `/snake-evolution.html`.
 3. Complete a Classic round: movement, food, obstacles on/off, collisions, game over, restart, and best score.
 4. Test Open Map in all six environments: movement, camera, both touch sticks simultaneously, food, companions, obstacle collision, self-collision, power-ups, pause, restart, and menu.
-5. Open and close the store mid-round; verify it does not reset the game.
-6. Verify purchases, insufficient-funds feedback, and local progress after refresh.
-7. Switch modes and restart repeatedly; check for listener duplication, stale animation loops, or retained chunks.
-8. Test on a physical mid-range Android phone in landscape. Desktop emulation does not establish real mobile GPU performance.
+6. Open and close the store mid-round; verify it does not reset the game.
+7. Verify purchases, insufficient-funds feedback, and local progress after refresh.
+8. Switch modes and restart repeatedly; check for listener duplication, stale animation loops, or retained chunks.
+9. Test on a physical mid-range Android phone in landscape. Desktop emulation does not establish real mobile GPU performance.
 
 ## Remaining milestones
 
