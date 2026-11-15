@@ -107,6 +107,422 @@
 
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+
+
+/* WILD TRAILS — PREMIUM STYLIZED ADVENTURE ART PASS
+   Procedural species materials, higher-detail foliage and architecture,
+   enclosed indoor ceilings, and optional locally-vendored GLB hero assets. */
+(function wildTrailsPremiumArt(){
+  const WT_ASSET_PACK='/assets/wild-trails-asset-pack.glb';
+  const wtTextureCache=new Map();
+  const wtMaterialCache=new Map();
+  let wtPackPromise=null;
+  const wtAmbientMeshes=[];
+
+  function wtHex(n){return '#'+(Number(n)>>>0).toString(16).padStart(6,'0')}
+  function wtMixHex(a,b,t){
+    const A=[a>>16&255,a>>8&255,a&255],B=[b>>16&255,b>>8&255,b&255];
+    return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('');
+  }
+  function wtSeed(id){let n=2166136261;for(const ch of String(id)){n^=ch.charCodeAt(0);n=Math.imul(n,16777619)}return n>>>0}
+  function wtRandom(seed){let n=seed>>>0;return()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296}}
+  function wtSpeciesMaps(skin,role='base'){
+    const key=skin.id+':'+role;
+    if(wtTextureCache.has(key))return wtTextureCache.get(key);
+    const isAccent=role==='accent',base=isAccent?skin.accent:skin.color;
+    const accent=isAccent?skin.color:skin.accent,rnd=wtRandom(wtSeed(key));
+    const cv=document.createElement('canvas');cv.width=cv.height=512;
+    const ctx=cv.getContext('2d',{alpha:false});
+    const grad=ctx.createLinearGradient(0,0,512,512);
+    grad.addColorStop(0,wtMixHex(base,0xffffff,.16));grad.addColorStop(.52,wtHex(base));grad.addColorStop(1,wtMixHex(base,0x101b19,.19));
+    ctx.fillStyle=grad;ctx.fillRect(0,0,512,512);
+    const kind=skin.id;
+    // Fine stochastic surface breakup keeps the materials tactile without noisy silhouettes.
+    for(let i=0;i<1850;i++){
+      const x=rnd()*512,y=rnd()*512,r=.35+rnd()*1.65;
+      ctx.fillStyle=wtMixHex(base,rnd()>.52?0xffffff:0x101814,.06+rnd()*.13);
+      ctx.globalAlpha=.18+rnd()*.24;ctx.beginPath();ctx.ellipse(x,y,r*1.5,r, rnd()*.8,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    if(kind==='snake'||kind==='croc'||kind==='fish'){
+      const sx=kind==='snake'?27:kind==='croc'?31:25,sy=kind==='fish'?22:18;
+      for(let row=-1;row<Math.ceil(512/sy)+1;row++)for(let col=-1;col<Math.ceil(512/sx)+1;col++){
+        const x=col*sx+(row%2)*sx*.5,y=row*sy;
+        const blend=(row+col)%4===0?.42:.23;
+        ctx.fillStyle=wtMixHex(base,accent,blend);ctx.strokeStyle=wtMixHex(base,0x15251e,.48);ctx.lineWidth=1.35;
+        ctx.beginPath();ctx.ellipse(x,y,sx*.47,sy*.46,0,Math.PI,Math.PI*2);ctx.quadraticCurveTo(x,y+sy*.70,x-sx*.47,y);ctx.closePath();ctx.fill();ctx.stroke();
+        ctx.strokeStyle=wtMixHex(base,0xffffff,.42);ctx.lineWidth=.9;ctx.beginPath();ctx.arc(x-sx*.04,y-sy*.02,sx*.30,Math.PI*1.08,Math.PI*1.83);ctx.stroke();
+      }
+    }else if(kind==='worm'){
+      for(let y=12;y<530;y+=31){ctx.strokeStyle=wtMixHex(base,accent,.45);ctx.lineWidth=7;ctx.globalAlpha=.48;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(120,y-8,350,y+8,512,y-2);ctx.stroke();ctx.strokeStyle=wtMixHex(base,0xffffff,.48);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,y-4);ctx.bezierCurveTo(160,y-11,340,y+1,512,y-7);ctx.stroke()}ctx.globalAlpha=1;
+    }else if(kind==='cat'){
+      for(let i=0;i<15;i++){const x=i*43-20;ctx.strokeStyle=wtMixHex(base,accent,.42);ctx.lineWidth=5+rnd()*5;ctx.globalAlpha=.34;ctx.beginPath();ctx.moveTo(x,0);ctx.bezierCurveTo(x+30,120,x-30,230,x+14,340);ctx.bezierCurveTo(x+44,410,x-8,465,x+5,512);ctx.stroke()}ctx.globalAlpha=1;
+    }else if(kind==='deer'){
+      for(let i=0;i<175;i++){const x=rnd()*512,y=rnd()*512;ctx.fillStyle=wtMixHex(base,0xf6e7c8,.52);ctx.globalAlpha=.48;ctx.beginPath();ctx.ellipse(x,y,2.3+rnd()*2.5,3.2+rnd()*2.8,-.25,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+    }else if(kind==='lion'){
+      for(let i=0;i<1100;i++){const x=rnd()*512,y=rnd()*512;ctx.strokeStyle=wtMixHex(base,accent,.38);ctx.globalAlpha=.22+rnd()*.25;ctx.lineWidth=.6+rnd()*1.5;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+4,y+5,x+7,y+10);ctx.stroke()}ctx.globalAlpha=1;
+    }else if(['bird','owl','falcon','duck','chicken'].includes(kind)){
+      for(let row=0;row<26;row++)for(let col=0;col<16;col++){
+        const x=col*34+(row%2)*17+12,y=row*21+10;
+        ctx.fillStyle=wtMixHex(base,accent,(row+col)%3===0?.52:.22);ctx.strokeStyle=wtMixHex(base,0x1b2723,.3);ctx.lineWidth=1.1;
+        ctx.beginPath();ctx.moveTo(x-12,y+6);ctx.quadraticCurveTo(x-12,y-9,x,y-13);ctx.quadraticCurveTo(x+13,y-5,x+12,y+7);ctx.quadraticCurveTo(x,y+1,x-12,y+6);ctx.fill();ctx.stroke();
+        ctx.strokeStyle='#ffffff38';ctx.beginPath();ctx.moveTo(x,y-9);ctx.lineTo(x,y+4);ctx.stroke();
+      }
+    }else if(kind==='panda'){
+      for(let i=0;i<1700;i++){const x=rnd()*512,y=rnd()*512;ctx.strokeStyle=wtMixHex(base,0xffffff,.3);ctx.globalAlpha=.13;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+2+rnd()*4,y-2-rnd()*3);ctx.stroke()}ctx.globalAlpha=1;
+    }else{
+      for(let i=0;i<900;i++){const x=rnd()*512,y=rnd()*512;ctx.strokeStyle=wtMixHex(base,accent,.25);ctx.globalAlpha=.18;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+3,y-4);ctx.stroke()}ctx.globalAlpha=1;
+    }
+    const bump=document.createElement('canvas');bump.width=bump.height=512;const bx=bump.getContext('2d',{alpha:false});
+    bx.fillStyle='#808080';bx.fillRect(0,0,512,512);
+    if(['snake','croc','fish'].includes(kind)){
+      for(let y=-12,row=0;y<530;y+=kind==='fish'?22:18,row++)for(let x=-20,col=0;x<540;x+=kind==='snake'?27:25,col++){
+        const xx=x+(row%2)*(kind==='snake'?13.5:12.5);
+        bx.fillStyle=(row+col)%3===0?'#b0b0b0':'#686868';bx.beginPath();bx.ellipse(xx,y,10,6,0,0,Math.PI*2);bx.fill();
+      }
+    }else if(kind==='deer'){
+      for(let i=0;i<170;i++){bx.fillStyle='#b6b6b6';bx.beginPath();bx.arc(rnd()*512,rnd()*512,2+rnd()*2,0,Math.PI*2);bx.fill()}
+    }else{
+      for(let i=0;i<1100;i++){bx.fillStyle=rnd()>.5?'#999999':'#707070';bx.fillRect(rnd()*512,rnd()*512,1+rnd()*2,1+rnd()*3)}
+    }
+    const colorTexture=new THREE.CanvasTexture(cv),bumpTexture=new THREE.CanvasTexture(bump);
+    colorTexture.colorSpace=THREE.SRGBColorSpace;colorTexture.wrapS=colorTexture.wrapT=THREE.RepeatWrapping;
+    bumpTexture.wrapS=bumpTexture.wrapT=THREE.RepeatWrapping;
+    const aniso=renderer?.capabilities?.getMaxAnisotropy?.()||4;colorTexture.anisotropy=aniso;bumpTexture.anisotropy=aniso;
+    const result={colorTexture,bumpTexture};wtTextureCache.set(key,result);return result;
+  }
+  function wtEnsureUv(geometry){
+    if(!geometry?.attributes?.position||geometry.attributes.uv)return;
+    const p=geometry.attributes.position,count=p.count,uv=new Float32Array(count*2);
+    const box=new THREE.Box3().setFromBufferAttribute(p),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+    for(let i=0;i<count;i++){
+      const x=p.getX(i)-center.x,y=p.getY(i)-center.y,z=p.getZ(i);
+      uv[i*2]=(Math.atan2(y,x)/(Math.PI*2)+1)%1;
+      uv[i*2+1]=(z-box.min.z)/Math.max(.001,size.z);
+    }
+    geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+  }
+  function wtPatternMaterial(source,skin,role){
+    const key=skin.id+':'+role+':'+(source.color?.getHex?.()||0);
+    if(wtMaterialCache.has(key))return wtMaterialCache.get(key);
+    const maps=wtSpeciesMaps(skin,role),m=source.clone();
+    m.map=maps.colorTexture;m.bumpMap=maps.bumpTexture;m.bumpScale=skin.id==='snake'||skin.id==='croc'?.035:.014;
+    m.color.setHex(0xffffff);m.roughness=skin.id==='fish'?.48:skin.id==='snake'?.57:.76;
+    if('clearcoat' in m)m.clearcoat=skin.id==='fish'?.24:.08;
+    m.needsUpdate=true;wtMaterialCache.set(key,m);return m;
+  }
+  const wtCreateAnimalBase=createAnimal;
+  createAnimal=function(skin){
+    const creature=wtCreateAnimalBase(skin);
+    creature.traverse(o=>{
+      if(!o.isMesh||!o.material)return;
+      if(!o.geometry.attributes.uv)wtEnsureUv(o.geometry);
+      const apply=m=>{
+        if(!m?.color)return m;const color=m.color.getHex();
+        if(color===(skin.color>>>0))return wtPatternMaterial(m,skin,'base');
+        if(color===(skin.accent>>>0))return wtPatternMaterial(m,skin,'accent');
+        if(o.name==='Eye'||o.name==='Eye surround'||o.name==='Eye glint'){const glossy=m.clone();glossy.roughness=.16;if('clearcoat' in glossy)glossy.clearcoat=.85;return glossy}
+        return m;
+      };
+      o.material=Array.isArray(o.material)?o.material.map(apply):apply(o.material);
+    });
+    creature.userData.artPass='wild-trails-premium-v1';
+    if(skin.id==='deer'){
+      const spotMat=mat(0xe8d5a7,.9);
+      for(const side of [-1,1])for(const z of [-.30,-.02,.26]){
+        const spot=animalBall(creature,'Deer coat marking',spotMat,side*.365,.99,z,.045,.018,.055,12);
+        spot.rotation.z=side*.16;
+      }
+    }
+    if(skin.id==='fish'){
+      const gill=mat(skin.accent,.72);
+      for(const side of [-1,1])for(let k=0;k<3;k++)animalTube(creature,'Gill relief',[[side*.34,.76,-.30-k*.08],[side*.44,.62,-.36-k*.08],[side*.40,.49,-.42-k*.08]],.012,gill);
+    }
+    return creature;
+  };
+
+  // Every selectable creature now has a species-matched textured body trail.
+  const wtCreateTrailBase=createTrailMesh;
+  createTrailMesh=function(){
+    wtCreateTrailBase();
+    if(!trailMesh)return;
+    const radial=12,uv=new Float32Array(trailRingCount*radial*2);
+    for(let i=0;i<trailRingCount;i++)for(let j=0;j<radial;j++){
+      const k=(i*radial+j)*2;uv[k]=j/radial;uv[k+1]=i/Math.max(1,trailRingCount-1)*3.1;
+    }
+    trailMesh.geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+    const skin=skins[state.skin]||skins[0],maps=wtSpeciesMaps(skin,'base'),m=trailMesh.material.clone();
+    m.map=maps.colorTexture;m.bumpMap=maps.bumpTexture;m.bumpScale=skin.id==='snake'||skin.id==='croc'?.035:.018;
+    m.color.setHex(0xffffff);m.roughness=skin.id==='snake'?.55:skin.id==='fish'?.49:.75;m.needsUpdate=true;
+    trailMesh.material=m;trailMesh.name='Species-textured continuous adventure body';
+  };
+
+  // Replace the old low-detail tree batches with sculpted trunks, natural branches,
+  // layered high-resolution crowns and a restrained instance budget.
+  addTreeForest=function(points){
+    if(!Array.isArray(points)||!points.length)return;
+    const trunks=[],roots=[],branches=[],canopies=[[],[],[]],leafA=mat(0x2e633c,.88),leafB=mat(0x477e49,.9),leafC=mat(0x638c4c,.92),trunkMat=mat(0x60402b,.96);
+    points.forEach((p,i)=>{
+      const s=p.s||1;trunks.push({x:p.x,y:1.55*s,z:p.z,sx:.30*s,sy:1.55*s,sz:.30*s,ry:i*.31});
+      roots.push({x:p.x,y:.16*s,z:p.z,sx:.75*s,sy:.18*s,sz:.72*s,ry:i*.2});
+      for(let k=0;k<3;k++){
+        const a=i*1.71+k*Math.PI*2/3,ox=Math.cos(a),oz=Math.sin(a);
+        branches.push({x:p.x+ox*.34*s,y:2.38*s,z:p.z+oz*.34*s,sx:.11*s,sy:.72*s,sz:.11*s,rx:oz*.40,rz:-ox*.40,ry:a});
+      }
+      for(let k=0;k<7;k++){
+        const a=k*Math.PI*2/7+i*.41,ring=k%3,rad=(ring===0?.25:ring===1?.72:.30)*s;
+        const x=p.x+Math.cos(a)*rad,z=p.z+Math.sin(a)*rad;
+        canopies[k%3].push({x,y:(3.05+(k%2)*.52)*s,z,sx:(.78+(k%3)*.10)*s,sy:(.82+(k%2)*.16)*s,sz:(.76+(k%3)*.08)*s,ry:a});
+      }
+      obstacles.push({x:p.x,z:p.z,r:1.12*s});
+    });
+    instancedBatch('Sculpted tree trunks',new THREE.CylinderGeometry(.62,.92,2,10,2),trunkMat,trunks);
+    instancedBatch('Tree root flares',new THREE.SphereGeometry(1,12,8),trunkMat,roots);
+    instancedBatch('Natural tree branches',new THREE.CylinderGeometry(.16,.26,1,8),trunkMat,branches);
+    instancedBatch('Deep foliage crown',new THREE.IcosahedronGeometry(1,2),leafA,canopies[0]);
+    instancedBatch('Sunlit foliage crown',new THREE.IcosahedronGeometry(1,2),leafB,canopies[1]);
+    instancedBatch('Olive foliage crown',new THREE.IcosahedronGeometry(1,2),leafC,canopies[2]);
+  };
+
+  function wtDecorBox(x,y,z,w,h,d,color,rough=.75,metal=0){
+    return mesh(new THREE.BoxGeometry(w,h,d),mat(color,rough,metal),x,y,z,world);
+  }
+  function wtAddIndoorCeiling(){
+    if(state.map!=='home'&&state.map!=='kitchen')return;
+    const kitchen=state.map==='kitchen',base=kitchen?0x53675f:0x57483a,beam=kitchen?0x354c45:0x3c2e25;
+    const roofMat=new THREE.MeshStandardMaterial({color:base,roughness:.88,side:THREE.DoubleSide,transparent:true,opacity:.58,depthWrite:false});
+    const roof=mesh(new THREE.PlaneGeometry(196,196),roofMat,0,12.15,0,world);roof.rotation.x=-Math.PI/2;roof.name='Translucent enclosed interior ceiling';roof.userData.wtCeiling=true;
+    for(let p=-88;p<=88;p+=22){
+      wtDecorBox(p,11.92,-0,196,.20,.34,beam,.9);
+      wtDecorBox(0,11.92,p,.34,.20,196,beam,.9);
+    }
+    for(const side of [-1,1]){
+      wtDecorBox(side*97.5,11.68,0,.5,.42,196,base,.86);
+      wtDecorBox(0,11.68,side*97.5,196,.42,.5,base,.86);
+    }
+    const lights=kitchen?[-36,-12,12,36]:[-44,-15,15,44];
+    for(const x of lights)for(const z of lights){
+      const stem=mesh(new THREE.CylinderGeometry(.035,.035,.85,8),mat(0x3b4440,.5,.55),x,11.35,z,world);
+      const shade=mesh(new THREE.CylinderGeometry(.24,.52,.25,16),mat(kitchen?0xd0c6ae:0x9c7953,.48,.2),x,10.88,z,world);
+      const glow=mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshBasicMaterial({color:kitchen?0xffe1ae:0xffd59a}),x,10.72,z,world);
+      wtAmbientMeshes.push({glow,shade,phase:x*.13+z*.07});
+    }
+  }
+  function wtAddGardenDetails(){
+    const rockMat=mat(0x827b63,.94),moss=mat(0x55734a,.98);
+    const rocks=[];
+    for(let i=0;i<32;i++){
+      const a=i*2.399,r=28+(i%5)*5,x=Math.cos(a)*r,z=Math.sin(a)*r;
+      rocks.push({x,y:.27,z,sx:.65+(i%3)*.22,sy:.34+(i%2)*.15,sz:.52+(i%4)*.16,ry:a});
+    }
+    instancedBatch('Park river stones',new THREE.DodecahedronGeometry(1,1),rockMat,rocks);
+    const beds=[];
+    for(let i=0;i<80;i++){
+      const a=i*2.399,r=14+(i%6)*4;
+      beds.push({x:Math.cos(a)*r,y:.26,z:Math.sin(a)*r,sx:.10,sy:.10,sz:.10,ry:a});
+    }
+    instancedBatch('Meadow flower centers',new THREE.IcosahedronGeometry(1,1),mat(0xe5c26b,.72),beds);
+    for(const z of [-44,44]){
+      wtDecorBox(-40,.38,z,22,.76,.18,0x6b4d34,.92);
+      wtDecorBox(40,.38,z,22,.76,.18,0x6b4d34,.92);
+      for(let x=-50;x<=50;x+=4)for(const y of [.26,.56])wtDecorBox(x,y,z, .12,.12,.3,0x98724c,.85);
+    }
+  }
+  function wtAddStreetDetails(){
+    const pot=mat(0x986246,.82),plant=mat(0x3c7146,.91),metal=mat(0x3a4948,.48,.55);
+    for(const side of [-1,1])for(const z of [-84,-48,-12,24,60,84]){
+      const x=side*18.1;
+      const p=mesh(new THREE.CylinderGeometry(.34,.28,.62,16),pot,x,.31,z,world);
+      const soil=mesh(new THREE.CylinderGeometry(.28,.28,.06,16),mat(0x34251c),x,.64,z,world);
+      const shrub=mesh(new THREE.IcosahedronGeometry(.57,2),plant,x,.98,z,world);shrub.scale.set(.82,1.05,.82);
+      wtDecorBox(x,1.48,z,.09,.46,.09,0x4b534d,.6,.25);
+    }
+    for(const z of [-72,-24,24,72]){
+      wtDecorBox(-17,4.0,z,1.05,.16,.12,0x374d4b,.52,.2);
+      wtDecorBox(17,4.0,z,1.05,.16,.12,0x374d4b,.52,.2);
+      for(const side of [-1,1]){
+        const x=side*17;
+        wtDecorBox(x,3.55,z,1.0,.66,.12,0x9d6844,.75);
+        for(let k=0;k<4;k++)wtDecorBox(x+side*(k-1.5)*.19,3.55,z-.08,.035,.5,.03,0x3b4945,.62,.25);
+      }
+    }
+  }
+  function wtAddStationDetails(){
+    const steel=mat(0x394b4a,.42,.66),brass=mat(0xb08a4c,.36,.62);
+    for(const z of [-84,-56,-28,0,28,56,84]){
+      const curve=new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-12.8,5.8,z),new THREE.Vector3(-11.7,6.8,z),
+        new THREE.Vector3(-9,7.25,z),new THREE.Vector3(-6.2,6.8,z),
+        new THREE.Vector3(0,6.55,z),new THREE.Vector3(6.2,6.8,z),
+        new THREE.Vector3(9,7.25,z),new THREE.Vector3(11.7,6.8,z),
+        new THREE.Vector3(12.8,5.8,z)
+      ]);
+      const arch=mesh(new THREE.TubeGeometry(curve,32,.075,8,false),steel,0,0,0,world);arch.name='Station arched roof truss';
+      for(const x of [-12.5,12.5]){
+        wtDecorBox(x,5.4,z,.22,1.0,.22,brass,.4,.5);
+        const lamp=mesh(new THREE.SphereGeometry(.16,12,10),new THREE.MeshBasicMaterial({color:0xffe0a0}),x*.67,6.0,z,world);
+        wtAmbientMeshes.push({glow:lamp,phase:z*.1+x});
+      }
+    }
+    // Raised tactile warning bands stay on the platform margins, clear of the rail corridor.
+    for(const side of [-1,1]){
+      for(let z=-96;z<=96;z+=2.4)wtDecorBox(side*5.85,.74,z,.42,.035,.12,0xe2c56e,.92);
+      for(const z of [-65,-15,35,75]){
+        wtDecorBox(side*10.8,1.02,z,3.4,.12,.68,0x725d46,.9);
+        for(const x of [-1.3,0,1.3])wtDecorBox(side*10.8+x,1.18,z,.08,.23,.08,0x354441,.5,.45);
+      }
+    }
+  }
+  function wtAddIndoorDetails(){
+    const kitchen=state.map==='kitchen';
+    const trim=kitchen?0xa9bcb2:0x9d7b58,frame=kitchen?0x405c53:0x56402f;
+    for(const z of [-96,96])wtDecorBox(0,.58,z,192,.24,.32,trim,.82);
+    for(const x of [-96,96])wtDecorBox(x,.58,0,.32,.24,192,trim,.82);
+    if(kitchen){
+      // Extra upper storage, vent hood and restrained backsplash relief.
+      for(const x of [-34,-18,0,18,34]){
+        wtDecorBox(x,6.55,-96,7.6,2.8,.42,0x617e73,.48,.04);
+        wtDecorBox(x,6.55,-95.74,7.0,2.35,.06,0x8fa79a,.68);
+        wtDecorBox(x,6.55,-95.68,.09,2.2,.08,frame,.5,.2);
+        wtDecorBox(x+2.7,6.6,-95.58,.12,.56,.12,0xc7ae7c,.35,.65);
+      }
+      wtDecorBox(-44,9.3,-95.5,8.5,.5,1.0,steel,.34,.72);
+    }else{
+      // Picture frames, curtain rails and wall sconces make the home read as lived-in.
+      for(const x of [-58,-22,22,58]){
+        wtDecorBox(x,7.0,-96,6.8,4.2,.20,frame,.72);
+        wtDecorBox(x,7.0,-95.86,6.2,3.6,.07,0x9bb1a6,.42);
+        wtDecorBox(x,4.0,-95.64,7.2,.16,.20,trim,.62);
+      }
+    }
+  }
+  function wtAddNightDetails(){
+    const cap=mat(0x6a8b57,.82),stem=mat(0xd4d0ad,.88),glow= new THREE.MeshStandardMaterial({color:0x87e6c1,emissive:0x2a9d79,emissiveIntensity:1.1,roughness:.25});
+    const items=[];
+    for(let i=0;i<30;i++){
+      const a=i*2.399,r=24+(i%6)*8,x=Math.cos(a)*r,z=Math.sin(a)*r,h=.35+(i%4)*.18;
+      items.push({x,y:h*.5,z,sx:.11,sy:h*.55,sz:.11});
+      const capMesh=mesh(new THREE.SphereGeometry(.28+(i%3)*.05,12,8),glow,x,h,z,world);capMesh.scale.set(1,.42,1);
+      if(i%3===0)mesh(new THREE.SphereGeometry(.10,8,6),cap,x+.22,h-.06,z+.08,world);
+    }
+    instancedBatch('Bioluminescent mushroom stems',new THREE.CylinderGeometry(.72,.82,1,8),stem,items);
+  }
+  function wtAddMapArt(){
+    if(state.map==='garden')wtAddGardenDetails();
+    else if(state.map==='street')wtAddStreetDetails();
+    else if(state.map==='station')wtAddStationDetails();
+    else if(state.map==='home'||state.map==='kitchen')wtAddIndoorDetails();
+    else if(state.map==='night')wtAddNightDetails();
+    wtAddIndoorCeiling();
+  }
+
+  // Rebuild shopfronts as layered architecture: stone base, framed windows,
+  // sun shades, signage and metalwork. Decoration does not alter collision.
+  const wtOldAddBuilding=addBuilding;
+  addBuilding=function(x,z,w,d,h,color,index){
+    wtOldAddBuilding(x,z,w,d,h,color,index);
+    if(state.map!=='street')return;
+    const side=x>0?-1:1,face=x+side*(w/2+.10),trim=[0x5a4031,0x344f4a,0x71513e][Math.abs(index||0)%3];
+    wtDecorBox(face,1.2,z,w*.78,.20,.36,trim,.76);
+    wtDecorBox(face,3.25,z,w*.84,.22,1.10,[0xc28b56,0x547c78,0xa35e48][Math.abs(index||0)%3],.72);
+    wtDecorBox(face,3.82,z,w*.67,.76,.18,0x293a3a,.38,.2);
+    for(let k=-1;k<=1;k++)wtDecorBox(face,3.82,z+k*w*.20,.075,.62,.13,0xbca16f,.42,.45);
+    for(let row=0;row<Math.max(1,Math.floor((h-5)/4));row++){
+      const y=5+row*3.2;
+      wtDecorBox(face,y,z,w*.82,.12,.35,trim,.7);
+      for(const dz of [-d*.30,d*.30]){
+        wtDecorBox(face,y+.85,z+dz,.28,1.6,.38,0x9eaa9f,.66);
+        wtDecorBox(face,y+1.62,z+dz,.58,.12,.5,0x4a5551,.52,.4);
+      }
+    }
+    for(const dz of [-d*.35,d*.35])wtDecorBox(face,Math.min(h-1.2,6.0),z+dz,.24,Math.min(2.3,h*.25),.42,trim,.7);
+  };
+
+  // Higher-grade station roof trusses sit above existing platforms; they do not
+  // enter the rail path or add new collision volumes.
+  const wtOldAddStation=addStation;
+  addStation=function(){wtOldAddStation()};
+
+  const wtOldBuildEnvironment=buildEnvironment;
+  buildEnvironment=function(){
+    wtOldBuildEnvironment();
+    wtAddMapArt();
+    // The imported art pack loads asynchronously. Procedural geometry remains
+    // the instant fallback, so the game can start even on a slow network.
+    wtLoadArtPack().then(gltf=>wtPlaceArtPack(gltf,world)).catch(e=>console.warn('Premium art pack unavailable; procedural world retained',e));
+  };
+  function wtLoadArtPack(){
+    if(!wtPackPromise)wtPackPromise=loadGameModel(WT_ASSET_PACK).catch(error=>{wtPackPromise=null;throw error});
+    return wtPackPromise;
+  }
+  function wtCloneAsset(gltf,name,x,y,z,scale=1,rotation=0,targetWorld=world){
+    if(!gltf||!targetWorld||targetWorld!==world)return null;
+    const source=gltf.scene.getObjectByName(name);if(!source){console.warn('Missing Wild Trails asset:',name);return null}
+    const clone=SkeletonUtils.clone(source);clone.position.set(x,y,z);clone.rotation.y=rotation;clone.scale.setScalar(scale);
+    clone.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=true;o.userData.wtAsset=true}});
+    targetWorld.add(clone);return clone;
+  }
+  function wtPlaceArtPack(gltf,targetWorld){
+    if(!gltf||targetWorld!==world)return;
+    const put=(name,x,y,z,scale,rotation=0)=>wtCloneAsset(gltf,name,x,y,z,scale,rotation,targetWorld);
+    if(state.map==='garden'){
+      for(const p of [[-65,0,-54],[65,0,-54],[-65,0,54],[65,0,54]])put('WT_Garden_Tree',p[0],0,p[2],1.15);
+      put('WT_Garden_Bench',-18,0,18,1);put('WT_Garden_Bench',18,0,-18,1,Math.PI);
+    }else if(state.map==='street'){
+      for(const z of [-75,0,75]){
+        put('WT_Street_Shopfront',25.0,0,z,.82,Math.PI/2);
+        put('WT_Street_Shopfront',-25.0,0,z,.82,-Math.PI/2);
+      }
+    }else if(state.map==='station'){
+      for(const side of [-1,1])for(const z of [-56,-28,0,28,56])put('WT_Station_Canopy',side*11.3,0,z,.92);
+    }else if(state.map==='home'){
+      put('WT_Home_Armchair',-23,0,5,.92,Math.PI/2);
+    }else if(state.map==='kitchen'){
+      put('WT_Kitchen_Cabinet',-18,0,-19,.82);
+    }else if(state.map==='night'){
+      for(const p of [[-31,0,-35],[31,0,-28],[-29,0,34],[30,0,38]])put('WT_Night_CrystalCluster',p[0],0,p[2],1.25);
+      put('WT_Night_Lantern',-36,0,6,.9);put('WT_Night_Lantern',36,0,-8,.9);
+    }
+  }
+
+  // The bespoke serpent head is built to match the live body's local forward
+  // axis and neck connection. Keep the procedural model as a safe fallback.
+  const wtOldCreatePlayer=createPlayer;
+  createPlayer=function(){
+    wtOldCreatePlayer();
+    if(skins[state.skin]?.id!=='snake')return;
+    const owner=player,skinIndex=state.skin;
+    wtLoadArtPack().then(gltf=>{
+      if(!state.started||state.mode!=='open'||player!==owner||state.skin!==skinIndex)return;
+      const source=gltf.scene.getObjectByName('WT_SnakeHead');if(!source)return;
+      const hero=SkeletonUtils.clone(source);hero.name='Premium jade serpent hero';
+      hero.userData.kind='snake';hero.userData.rig={limbs:[],wings:[],tailParts:[]};
+      hero.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=true}});
+      if(creatureHead?.parent===owner)owner.remove(creatureHead);
+      owner.add(hero);creatureHead=hero;
+    }).catch(e=>console.warn('Custom snake head fallback retained',e));
+  };
+
+  // Keep indoor roofs visible from normal play height and gently fade them
+  // only if a camera rises above the ceiling plane.
+  const wtOldAnimateCreature=animateCreature;
+  animateCreature=function(t,moving){
+    wtOldAnimateCreature(t,moving);
+    for(const item of wtAmbientMeshes){
+      const pulse=.82+.18*Math.sin(t*.002+item.phase);
+      if(item.glow?.material?.color)item.glow.material.opacity=pulse;
+      if(item.shade?.material)item.shade.material.emissiveIntensity=.10+.08*pulse;
+    }
+    if(world){
+      world.traverse(o=>{
+        if(!o.userData?.wtCeiling||!o.material)return;
+        const target=camera?.position?.y>11.6?.12:.58;
+        o.material.opacity+=(target-o.material.opacity)*.08;
+      });
+    }
+  };
+})();
+
 </script>
 </head>
 <body>
