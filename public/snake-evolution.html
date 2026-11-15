@@ -137,28 +137,21 @@ function mat(color,rough=.85,metal=0){return new THREE.MeshStandardMaterial({col
 function mesh(geo,material,x,y,z,parent=world){const o=new THREE.Mesh(geo,material);o.position.set(x,y,z);o.castShadow=false;o.receiveShadow=false;parent.add(o);return o}
 function clearWorld(){if(world){scene.remove(world);world.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!Array.isArray(o.material))o.material.dispose()})}world=new THREE.Group();scene.add(world);foodItems=[];obstacleItems=[];bodyParts=[];path=[]}
 function makeTree(x,z,scale=1,parent=world){
- const trunk=mesh(new THREE.CylinderGeometry(.13*scale,.28*scale,2.05*scale,9),mat(0x68442f),x,1.02*scale,z,parent);
- trunk.rotation.z=(Math.random()-.5)*.08;
- const greens=[0x2f6840,0x3c7a49,0x4e8a50,0x67965a];
+ const wood=mat(0x68442f),foliage=mat(0x3d7949);
+ mesh(new THREE.CylinderGeometry(.13*scale,.28*scale,2.05*scale,8),wood,x,1.02*scale,z,parent);
  for(let i=0;i<4;i++){
-  const a=i*Math.PI*.5+.4,rad=.42*scale;
-  const crown=mesh(new THREE.SphereGeometry((.82+(i%2)*.12)*scale,12,9),mat(greens[(i+Math.floor(Math.random()*2))%greens.length]),x+Math.cos(a)*rad,2.05*scale+(i%2)*.38*scale,z+Math.sin(a)*rad,parent);
-  crown.scale.set(1,.92,1.04);
+  const angle=i*Math.PI*.5+.4,rad=.38*scale;
+  const crown=mesh(new THREE.SphereGeometry(.9*scale,10,8),foliage,x+Math.cos(angle)*rad,2.05*scale+(i%2)*.34*scale,z+Math.sin(angle)*rad,parent);
+  crown.scale.set(1,.95,1.04);
  }
- const top=mesh(new THREE.SphereGeometry(.92*scale,14,10),mat(greens[Math.floor(Math.random()*greens.length)]),x,2.72*scale,z,parent);
- top.scale.set(1.05,1.08,1);
- for(let i=0;i<3;i++){
-  const a=i*Math.PI*2/3;
-  const branch=mesh(new THREE.CylinderGeometry(.045*scale,.09*scale,.9*scale,6),mat(0x765039),x+Math.cos(a)*.34*scale,1.72*scale,z+Math.sin(a)*.34*scale,parent);
-  branch.rotation.z=Math.cos(a)*.72;branch.rotation.x=Math.sin(a)*.72;
- }
+ mesh(new THREE.SphereGeometry(.94*scale,12,9),foliage,x,2.72*scale,z,parent);
 }
 function spawnFood(x,z,parent=world,chunkKey=''){const roll=Math.random();let type='normal',color=0xf5c85f,shape=new THREE.SphereGeometry(.28,10,8);if(roll<.1){type='bonus';color=0x54d8c0;shape=new THREE.OctahedronGeometry(.42)}else if(roll<.16){type='speed';color=0x66aaff;shape=new THREE.TorusGeometry(.28,.1,8,14)}const s=skins[state.skin];if(type==='normal'){const foodStyle={owl:[0x9b8060,new THREE.SphereGeometry(.2,8,6)],cat:[0xe3a2c6,new THREE.TorusGeometry(.24,.1,7,12)],croc:[0x5aa8d5,new THREE.ConeGeometry(.24,.55,5)],chicken:[0xe7bd4b,new THREE.ConeGeometry(.22,.5,6)],bird:[0xc99b55,new THREE.OctahedronGeometry(.22)],duck:[0xe7c64e,new THREE.SphereGeometry(.22,8,6)],fish:[0x8bd8ef,new THREE.SphereGeometry(.2,8,6)]};const style=foodStyle[s.kind];if(style){color=style[0];shape=style[1]}}const f=mesh(shape,mat(color,.35,.08),x,.55,z,parent);f.userData={type,value:type==='bonus'?5:1,chunkKey};foodItems.push(f);return f}
 function makeChunk(cx,cz){
  const key=cx+','+cz;if(chunks.has(key))return;
  const group=new THREE.Group();world.add(group);chunks.set(key,group);
  let seed=Math.abs((cx*374761393+cz*668265263)>>>0);const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
- for(let i=0;i<7;i++){const x=cx*48+rand()*42-21,z=cz*48+rand()*42-21;if(Math.hypot(x-player.position.x,z-player.position.z)<8)continue;
+ for(let i=0;i<4;i++){const x=cx*48+rand()*42-21,z=cz*48+rand()*42-21;if(Math.hypot(x-player.position.x,z-player.position.z)<8)continue;
   if(state.map==='garden'||state.map==='night'){makeTree(x,z,.55+rand()*.85,group);if(i%2===0){const flower=mesh(new THREE.SphereGeometry(.13,7,6),mat([0xe9a6a8,0xf4d36e,0xa8b9ee][i%3]),x,.16,z,group);flower.scale.y=.55}}
   else if(state.map==='street'||state.map==='station'){const w=2+rand()*5,h=4+rand()*11;mesh(new THREE.BoxGeometry(w,h,3+rand()*4),mat(i%2?0x9aabb3:0x777e87),x,h/2,z,group)}
   else{const s=1+rand()*2;mesh(new THREE.BoxGeometry(s,1.5*s,s),mat(i%2?0x9b6948:0xc2b9a5),x,.75*s,z,group)}
@@ -194,7 +187,7 @@ function makeEnvironment(){
    const rail=box('Pond bridge | handrail',.12,.12,9,-13+side*1.12,.95,-9,0xb7834f,.55);
   }
   for(const [x,z,k] of [[-22,-18,1.15],[-23,7,1.25],[-4,-20,.9],[12,-18,1.15],[20,12,1.1],[1,20,1.05]] )makeTree(x,z,k,world);
-  for(let i=0;i<36;i++){
+  for(let i=0;i<24;i++){
    const a=Math.random()*Math.PI*2,r=11+Math.random()*14,x=Math.cos(a)*r,z=Math.sin(a)*r;
    const bloom=mesh(new THREE.SphereGeometry(.13,8,6),mat([0xe8a2a1,0xf0cf72,0xb7c8a1][i%3]),x,.17,z);
    bloom.scale.set(1,.62,1);
@@ -243,14 +236,18 @@ function makeEnvironment(){
   box('Interior wall | right',38,8,.35,0,4,-19,0x7d725f);
  }else if(state.map==='night'){
   const moon=mesh(new THREE.SphereGeometry(3.2,24,18),new THREE.MeshBasicMaterial({color:0xf5e7bd}),-28,32,-65);moon.castShadow=false;
-  for(let i=0;i<110;i++){
-   const x=Math.random()*260-130,y=12+Math.random()*65,z=Math.random()*260-130;
-   const star=mesh(new THREE.SphereGeometry(.08+Math.random()*.08,6,5),new THREE.MeshBasicMaterial({color:0xe8e6ce}),x,y,z);star.castShadow=false;
-  }
+  const starPositions=new Float32Array(110*3);
+  for(let i=0;i<110;i++){starPositions[i*3]=Math.random()*260-130;starPositions[i*3+1]=12+Math.random()*65;starPositions[i*3+2]=Math.random()*260-130}
+  const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute('position',new THREE.BufferAttribute(starPositions,3));
+  world.add(new THREE.Points(starGeometry,new THREE.PointsMaterial({color:0xe8e6ce,size:.22,sizeAttenuation:true})));
   for(const [x,z] of [[-18,-18],[-22,8],[15,-20],[21,13],[0,22]])makeTree(x,z,1.15,world);
   for(const [x,z] of [[-12,-8],[12,-5],[-4,14],[18,8]]){post(x,z,3,0x38443e);mesh(new THREE.SphereGeometry(.23,10,8),new THREE.MeshBasicMaterial({color:0xffd88a}),x,3.1,z)}
  }else if(state.map==='kitchen'){
-  for(let x=-35;x<=35;x+=5)for(let z=-35;z<=35;z+=5)box('Kitchen floor tile',4.92,.035,4.92,x,-.08,z,((x+z)/5)%2===0?0xc8d0c9:0xb8c4c0);
+  const tileCanvas=document.createElement('canvas');tileCanvas.width=tileCanvas.height=256;
+  const tileCtx=tileCanvas.getContext('2d');
+  for(let y=0;y<8;y++)for(let x=0;x<8;x++){tileCtx.fillStyle=(x+y)%2?'#b8c4c0':'#c8d0c9';tileCtx.fillRect(x*32,y*32,32,32)}
+  const tileTexture=new THREE.CanvasTexture(tileCanvas);tileTexture.wrapS=tileTexture.wrapT=THREE.RepeatWrapping;tileTexture.repeat.set(450,450);tileTexture.colorSpace=THREE.SRGBColorSpace;
+  const tiledFloor=mesh(new THREE.PlaneGeometry(9000,9000),new THREE.MeshStandardMaterial({map:tileTexture,roughness:.92}),0,-.08,0);tiledFloor.rotation.x=-Math.PI/2;
   box('Kitchen island | cabinet',7,1.6,3,-1,.75,-2,0x5e7a78);
   box('Kitchen island | stone top',7.4,.22,3.4,-1,1.66,-2,0xe4ded0,.35);
   for(let i=0;i<4;i++)box('Kitchen cabinet door',1.35,1.1,.08,-3.3+i*1.55,.72,-.44,0x8fa3a0);
