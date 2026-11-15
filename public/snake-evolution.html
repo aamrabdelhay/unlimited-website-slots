@@ -382,21 +382,66 @@ function addStreet(){
  for(const side of [-1,1]){addBox(side*17,.55,0,1.2,1.1,2.2,0x8e9d91,true);addStreetLamp(side*17,0,4.5)}
 }
 function addStation(){
- // Twin rails, sleepers, ballast and two full-length platforms.
- const ties=[];for(let z=-104;z<=104;z+=3.5)ties.push({x:0,y:.12,z,sx:8,sy:.20,sz:.42});
- instancedBatch('Railway sleepers',new THREE.BoxGeometry(1,1,1),mat(0x72563f),ties);
- for(const x of [-2.6,2.6]){mesh(new THREE.BoxGeometry(.20,.22,220),mat(0x6c7473,.4,.7),x,.30,0);mesh(new THREE.BoxGeometry(.36,.12,220),mat(0x343d3e,.35,.8),x,.42,0)}
- for(const x of [-9,9]){addBox(x,.30,0,7,.6,210,0xaaa99d);addBox(x,.63,0,7.2,.12,210,0xcac5b7);for(let z=-100;z<=100;z+=5)obstacles.push({x:x+(x<0?-3.5:3.5),z,r:2.4})}
- // Repeating canopy frames with steel columns and a long curved roof line.
- for(const z of [-45,-30,-15,0,15,30,45]){for(const x of [-11,11])mesh(new THREE.CylinderGeometry(.13,.18,6,8),mat(0x435452,.42,.6),x,3,z);addBox(0,6.1,z,23,.20,.38,0x455e5b)}
- addBox(0,6.45,0,22,.32,112,0x687d76);addBox(0,6.18,0,24,.10,114,0x9c967e);
- // A stationary three-car train set, with window rows and couplers.
- for(let car=0;car<3;car++){const z=-34+car*29;addBox(2.6,1.62,z,4.6,2.65,25,car===1?0x486b72:0x3b626a,true);addBox(2.6,3.0,z,4.25,.16,24.5,0xd5cdb9);
-  for(let wz=-9;wz<=9;wz+=6){addBox(.25,2.05,z+wz,.10,.86,3.1,0xa9c7c7);addBox(4.95,2.05,z+wz,.10,.86,3.1,0xa9c7c7)}
-  for(const x of [.8,4.4])for(const wz of [-8,8])mesh(new THREE.CylinderGeometry(.40,.40,.24,12),mat(0x20272a),x,.62,z+wz).rotation.z=Math.PI/2;
+ const concrete=mat(0x858b85,.92),edge=mat(0xb7b09d,.82),ballast=mat(0x343b3d,.98),steel=mat(0x4b5657,.42,.72),wood=mat(0x71543b,.9),yellow=mat(0xe1bd61,.78),dark=mat(0x20282a,.38,.55);
+ mesh(new THREE.BoxGeometry(54,.10,214),mat(0x777b75,.96),0,-.15,0);
+ mesh(new THREE.BoxGeometry(7.7,.12,212),ballast,0,-.065,0);
+ for(let z=-104;z<=104;z+=3.15)mesh(new THREE.BoxGeometry(7.3,.17,.56),wood,0,-.015,z);
+ for(const x of [-1.92,1.92]){
+  mesh(new THREE.BoxGeometry(.19,.21,212),steel,x,.085,0);
+  mesh(new THREE.BoxGeometry(.31,.045,212),dark,x,.205,0);
  }
- for(const x of [-9,9])for(const z of [-42,-16,16,42]){addBox(x,.82,z,3.2,.22,.72,0x795b3f,true);addBox(x,1.26,z,3.2,.65,.16,0x8d7456,true)}
- addBox(0,3.4,-58,15,1.0,.65,0x344b48);addBox(0,3.4,-57.62,11,.42,.05,0xd7c8a7);
+ for(const side of [-1,1]){
+  const x=side*8.9;
+  mesh(new THREE.BoxGeometry(8.0,.20,210),concrete,x,-.035,0);
+  mesh(new THREE.BoxGeometry(8.05,.10,210),edge,x,.105,0);
+  mesh(new THREE.BoxGeometry(.34,.045,207),yellow,side*5.08,.18,0);
+  mesh(new THREE.BoxGeometry(.18,.07,210),steel,side*4.74,.15,0);
+  for(const z of [-88,-56,-24,8,40,72]){
+   mesh(new THREE.BoxGeometry(2.0,.24,1.0),wood,x,.26,z);
+   mesh(new THREE.BoxGeometry(2.0,.09,.95),edge,x,.405,z);
+   for(const dx of [-.72,.72])mesh(new THREE.BoxGeometry(.10,.56,.12),dark,x+dx,.68,z);
+  }
+  for(const z of [-88,-44,0,44,88]){
+   mesh(new THREE.CylinderGeometry(.12,.18,5.6,12),steel,side*13.1,2.8,z);
+   mesh(new THREE.BoxGeometry(.62,.20,.38),dark,side*13.1,5.45,z);
+   const lamp=mesh(new THREE.SphereGeometry(.19,16,12),new THREE.MeshBasicMaterial({color:0xffdfa0}),side*13.1,5.25,z);
+   lamp.scale.set(1.1,.7,1.1);
+  }
+ }
+ for(const z of [-72,72]){
+  mesh(new THREE.BoxGeometry(27,.12,6.2),concrete,0,-.015,z);
+  for(let x=-12;x<=12;x+=3)mesh(new THREE.BoxGeometry(1.25,.035,5.7),yellow,x,.065,z);
+  for(const side of [-1,1]){
+   mesh(new THREE.CylinderGeometry(.12,.16,1.25,10),steel,side*15,.62,z);
+   mesh(new THREE.SphereGeometry(.20,14,10),new THREE.MeshBasicMaterial({color:0xe5c768}),side*15,1.32,z);
+  }
+ }
+ for(const side of [-1,1]){
+  for(let z=-94;z<=94;z+=8)mesh(new THREE.BoxGeometry(.16,1.5,.16),steel,side*23.2,.74,z);
+  for(const y of [.42,1.08])mesh(new THREE.BoxGeometry(.12,.12,188),steel,side*23.2,y,0);
+  mesh(new THREE.BoxGeometry(4.2,.72,.28),wood,side*17.5,1.25,-91);
+  mesh(new THREE.BoxGeometry(3.7,.10,.12),yellow,side*17.5,1.68,-91);
+ }
+ for(const x of [-5,5]){
+  mesh(new THREE.BoxGeometry(1.0,.72,3.0),wood,x,.43,-88);
+  mesh(new THREE.BoxGeometry(1.04,.13,3.05),edge,x,.84,-88);
+ }
+ mesh(new THREE.BoxGeometry(8.8,3.0,.42),dark,0,5.8,-94);
+ mesh(new THREE.BoxGeometry(8.4,2.65,.12),new THREE.MeshStandardMaterial({color:0x31585a,roughness:.46,metalness:.16}),0,5.8,-93.74);
+ mesh(new THREE.BoxGeometry(7.6,.12,.08),yellow,0,6.62,-93.65);
+ for(const z of [-84,-56,-28,0,28,56,84]){
+  for(const x of [-13,13]){
+   mesh(new THREE.CylinderGeometry(.14,.19,5.65,12),steel,x,2.82,z);
+   mesh(new THREE.BoxGeometry(.42,.22,.42),yellow,x,5.55,z);
+  }
+  const arch=new THREE.CatmullRomCurve3([
+   new THREE.Vector3(-13,5.55,z),new THREE.Vector3(-10,6.55,z),
+   new THREE.Vector3(-6,7.0,z),new THREE.Vector3(0,7.18,z),
+   new THREE.Vector3(6,7.0,z),new THREE.Vector3(10,6.55,z),new THREE.Vector3(13,5.55,z)
+  ]);
+  mesh(new THREE.TubeGeometry(arch,36,.095,10,false),steel,0,0,0);
+  mesh(new THREE.BoxGeometry(23.8,.13,.18),yellow,0,6.95,z);
+ }
 }
 function addRoomWalls(){
  const wall=mat(0xb9ad98),trim=mat(0x5c5146);
@@ -1011,17 +1056,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       }
       return;
     }
-    if(state.map==='station'){
-      for(const x of [-edge,edge]){
-        for(let i=-4;i<=4;i++){
-          const z=i*22;
-          addBox(x,1.65,z,5.8,3.1,19,i%2?0x3d7078:0x596d70,true);
-          addBox(x,3.3,z,5.5,.18,18.7,0xc9c1ad,false);
-          for(let w=-1;w<=1;w++)addBox(x+(x>0?-2.95:2.95),2,z+w*5,.08,.9,2.3,0x9bc2c3,false);
-        }
-      }
-      return;
-    }
+    if(state.map==='station'){ return; }
     // House and kitchen worlds finish in matching tiled / paneled interior walls.
     const kitchen=state.map==='kitchen';
     const wallColor=kitchen?0x8a9f98:0x8a705d;
@@ -1043,9 +1078,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     }
     const hole=new THREE.Group(),dark=new THREE.Mesh(new THREE.CircleGeometry(.9,28),new THREE.MeshBasicMaterial({color:0x080d0b}));dark.position.set(0,0,.03);hole.add(dark);
     const rim=new THREE.Mesh(new THREE.TorusGeometry(.94,.12,10,28),disposableMaterial(0x665342));rim.position.z=.05;hole.add(rim);
-    hole.position.set(31.9,1.0,-16);hole.rotation.y=Math.PI/2;world.add(hole);
-    obstacles.push({x:31.2,z:-16,r:1.15,source:'mousehole'});
-    ratActor=createPreyModel('cat');ratActor.scale.setScalar(.72);ratActor.position.set(28.4,.3,-16);world.add(ratActor);
+    hole.position.set(-29.15,.92,-27.45);hole.rotation.y=0;world.add(hole);
+    const holeTrim=new THREE.Mesh(new THREE.BoxGeometry(2.35,1.85,.16),disposableMaterial(0x65432f));holeTrim.position.set(-29.15,.95,-27.37);world.add(holeTrim);hole.position.z=-27.26;
+    const cheese=new THREE.Mesh(new THREE.ConeGeometry(.28,.42,3),disposableMaterial(0xe2b84e));cheese.position.set(-26.8,.19,-25.7);cheese.rotation.z=-.35;world.add(cheese);
+    obstacles.push({x:-29.15,z:-27.15,r:.85,source:'mousehole'});
+    ratActor=createPreyModel('cat');ratActor.scale.setScalar(.72);ratActor.position.set(-27.1,.08,-24.95);world.add(ratActor);
   }
   function addHomeTelevision(){
     tvCanvas=document.createElement('canvas');tvCanvas.width=256;tvCanvas.height=144;tvContext=tvCanvas.getContext('2d');
@@ -1062,14 +1099,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       // A second live line of track gives the player a visible train to evade.
       for(let z=-112;z<=112;z+=3.5)addBox(-18,.12,z,7.4,.18,.38,0x765b43,false);
       for(const x of [-20.2,-15.8])addBox(x,.32,0,.18,.22,230,0x4c5656,false);
-      const train=buildPassingTrain();train.position.set(-18,0,-116);world.add(train);
-      dynamicHazards.push({kind:'train',object:train,x:-18,z:-116,halfX:2.8,halfZ:15,direction:1,speed:15.5});
-      // Broad, visible boarding steps on each parked carriage.
-      const stepXs=[7.9,7.2,6.5,5.8,5.1],stepHeights=[.55,1.1,1.65,2.2,2.75];
-      for(const center of [-34,-5,24]){
-        stepXs.forEach((x,i)=>addBox(x,stepHeights[i]/2,center,1.12,stepHeights[i],4.2,i%2?0x6b6457:0x8c795e,false));
-        addBox(4.82,2.86,center,1.5,.12,4.1,0x586d70,false);
-      }
+      const train=buildPassingTrain();train.position.set(0,0,-54);world.add(train);
+      dynamicHazards.push({kind:'train',object:train,x:0,z:-54,halfX:3.05,halfZ:18,direction:1,speed:11.5,minZ:-54,maxZ:54});
     }
     if(state.map==='street'){
       const colors=[0xb54c42,0x397681,0xd0a34c,0x52795b,0x69717a,0xb5b1a1];
@@ -1091,7 +1122,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   createPlayer=function(){
     oldCreatePlayer();
     const starts={
-      garden:[0,70],street:[0,78],station:[0,82],home:[0,19],kitchen:[8,19],night:[0,70]
+      garden:[0,70],street:[0,78],station:[8.6,82],home:[0,19],kitchen:[8,19],night:[0,70]
     };
     const p=starts[state.map]||[0,60];
     player.position.set(p[0],0,p[1]);
@@ -1149,8 +1180,9 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   function animateWorldDetails(dt,t,now){
     for(const hazard of dynamicHazards){
       hazard.object.position.z+=hazard.direction*hazard.speed*dt;
-      if(hazard.object.position.z>116){hazard.object.position.z=-116;hazard.object.position.x=hazard.x}
-      if(hazard.object.position.z< -116){hazard.object.position.z=116;hazard.object.position.x=hazard.x}
+      const upper=hazard.maxZ??116,lower=hazard.minZ??-116;
+      if(hazard.object.position.z>upper){hazard.object.position.z=lower;hazard.object.position.x=hazard.x}
+      if(hazard.object.position.z<lower){hazard.object.position.z=upper;hazard.object.position.x=hazard.x}
     }
     for(const pot of kitchenPots){
       pot.object.rotation.y=Math.sin(t*.0014+pot.phase)*.13;
@@ -1712,6 +1744,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   // -----------------------------------------------------------------------
   function playableBounds(){
     if(state.map==='home'||state.map==='kitchen')return {minX:-31.2,maxX:31.2,minZ:-26.2,maxZ:26.2};
+    if(state.map==='station')return {minX:-21,maxX:21,minZ:-90,maxZ:90};
     return {minX:-94,maxX:94,minZ:-94,maxZ:94};
   }
   function canFoodOccupy(x,z,pad=.42){
@@ -2087,7 +2120,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     let resolvedX=clamp(nx,bounds.minX,bounds.maxX),resolvedZ=clamp(nz,bounds.minZ,bounds.maxZ);
     if(state.obstacles&&!phased&&collidesAt(resolvedX,resolvedZ,.78)){
       resolvedX=player.position.x;resolvedZ=player.position.z;
-      if(inputLen>.065&&!stunned){state.wallFreezeUntil=now+2000;toast('ارتطام! توقف لمدة ثانيتين')}
+      if(inputLen>.065&&!stunned&&now>=(state.wallHitLockUntil||0)){state.wallFreezeUntil=now+2000;state.wallHitLockUntil=now+3000;toast('ارتطام! توقف لمدة ثانيتين')}
     }
     player.position.set(resolvedX,0,resolvedZ);player.rotation.y=-heading;
     if(!phased){
@@ -2958,7 +2991,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   if(player?.userData?.wtStatusRing){const r=player.userData.wtStatusRing,f=Date.now()<(state.freezeUntil||0)||Date.now()<(state.wallFreezeUntil||0),sl=Date.now()<(state.slowUntil||0);r.visible=f||sl;r.material.color.setHex(f?0x8eeaff:0xb68aff);r.rotation.z+=.018}
  };
  const oldPlayer=createPlayer;
- createPlayer=function(){oldPlayer();if(!player)return;state.freezeUntil=state.wallFreezeUntil=state.slowUntil=0;const r=new THREE.Mesh(new THREE.TorusGeometry(1.05,.055,10,48),new THREE.MeshStandardMaterial({color:0x8eeaff,emissive:0x2c9cbf,emissiveIntensity:.48,transparent:true,opacity:.82,roughness:.3}));r.rotation.x=-Math.PI/2;r.position.y=.045;r.visible=false;r.name='Debuff status ring';player.add(r);player.userData.wtStatusRing=r;player.userData.wtEatUntil=0};
+ createPlayer=function(){oldPlayer();if(!player)return;state.freezeUntil=state.wallFreezeUntil=state.slowUntil=state.wallHitLockUntil=0;const r=new THREE.Mesh(new THREE.TorusGeometry(1.05,.055,10,48),new THREE.MeshStandardMaterial({color:0x8eeaff,emissive:0x2c9cbf,emissiveIntensity:.48,transparent:true,opacity:.82,roughness:.3}));r.rotation.x=-Math.PI/2;r.position.y=.045;r.visible=false;r.name='Debuff status ring';player.add(r);player.userData.wtStatusRing=r;player.userData.wtEatUntil=0};
  function debuffFood(type){
   const g=new THREE.Group(),ice=type==='freeze',base=M(ice?0x6ed9ee:0x8762b5,.28,.12),lite=M(ice?0xd8faff:0xb8a0dc,.22,.08),dark=M(ice?0x2b83a3:0x49335e,.52);
   const sh=new THREE.Mesh(new THREE.CircleGeometry(.58,28),new THREE.MeshBasicMaterial({color:0x07130f,transparent:true,opacity:.32,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=.015;g.add(sh);
@@ -2979,36 +3012,6 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  };
 })();
 
-
-/* STATION ACCESS FIX — platforms are walkable surfaces, not solid walls */
-(function wtStationAccessAndWorldPolish(){
- const previousStation=addStation;
- addStation=function(){
-   const first=obstacles.length;
-   previousStation();
-   // The old platform builder accidentally registered both full-length platforms
-   // and their edge markers as 2D collision walls, sealing the station corridor.
-   for(let i=obstacles.length-1;i>=first;i--){
-     const o=obstacles[i];
-     if((o.halfZ||0)>80||((o.r||0)>=2.3&&(Math.abs(o.x)>11&&Math.abs(o.x)<14)))obstacles.splice(i,1);
-   }
-   // A broad, flush pedestrian crossing connects the two platforms across the rails.
-   const deck=new THREE.Mesh(new THREE.BoxGeometry(29,.16,5.2),new THREE.MeshStandardMaterial({color:0x8a806d,roughness:.88}));
-   deck.position.set(0,.10,82);deck.receiveShadow=true;world.add(deck);
-   for(let x=-13;x<=13;x+=2.6){
-     const stripe=new THREE.Mesh(new THREE.BoxGeometry(1.2,.025,4.7),new THREE.MeshStandardMaterial({color:0xe4d8b8,roughness:.8}));
-     stripe.position.set(x,.195,82);world.add(stripe);
-   }
-   for(const x of [-14.8,14.8]){
-     const post=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,1.25,10),new THREE.MeshStandardMaterial({color:0x3f514b,metalness:.4,roughness:.55}));
-     post.position.set(x,.62,82);world.add(post);
-     const lamp=new THREE.Mesh(new THREE.SphereGeometry(.19,12,10),new THREE.MeshBasicMaterial({color:0xffe4a8}));
-     lamp.position.set(x,1.3,82);world.add(lamp);
-   }
- };
- // Avoid tiny decorative station fixtures being registered as giant collision
- // volumes; only the parked train carriages and true props remain solid.
-})();
 
 </script>
 </body>
