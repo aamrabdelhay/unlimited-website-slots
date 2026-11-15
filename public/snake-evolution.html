@@ -1123,11 +1123,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     }
     const hole=new THREE.Group(),dark=new THREE.Mesh(new THREE.CircleGeometry(.9,28),new THREE.MeshBasicMaterial({color:0x080d0b}));dark.position.set(0,0,.03);hole.add(dark);
     const rim=new THREE.Mesh(new THREE.TorusGeometry(.94,.12,10,28),disposableMaterial(0x665342));rim.position.z=.05;hole.add(rim);
-    hole.position.set(-29.15,.92,-27.45);hole.rotation.y=0;world.add(hole);
-    const holeTrim=new THREE.Mesh(new THREE.BoxGeometry(2.35,1.85,.16),disposableMaterial(0x65432f));holeTrim.position.set(-29.15,.95,-27.37);world.add(holeTrim);hole.position.z=-27.26;
-    const cheese=new THREE.Mesh(new THREE.ConeGeometry(.28,.42,3),disposableMaterial(0xe2b84e));cheese.position.set(-26.8,.19,-25.7);cheese.rotation.z=-.35;world.add(cheese);
-    obstacles.push({x:-29.15,z:-27.15,r:.85,source:'mousehole'});
-    ratActor=createPreyModel('cat');ratActor.scale.setScalar(.72);ratActor.position.set(-27.1,.08,-24.95);world.add(ratActor);
+    hole.position.set(-29.15,.92,-28.58);hole.rotation.y=0;world.add(hole);
+    const holeTrim=new THREE.Mesh(new THREE.BoxGeometry(2.35,1.85,.16),disposableMaterial(0x65432f));holeTrim.position.set(-29.15,.95,-28.68);world.add(holeTrim);
+    const cheese=new THREE.Mesh(new THREE.ConeGeometry(.28,.42,3),disposableMaterial(0xe2b84e));cheese.position.set(-26.8,.19,-26.4);cheese.rotation.z=-.35;world.add(cheese);
+    obstacles.push({x:-29.15,z:-28.58,r:.85,source:'mousehole'});
+    ratActor=createPreyModel('cat');ratActor.scale.setScalar(.72);ratActor.position.set(-27.1,.08,-26.0);world.add(ratActor);
   }
   function addHomeTelevision(){
     tvCanvas=document.createElement('canvas');tvCanvas.width=256;tvCanvas.height=144;tvContext=tvCanvas.getContext('2d');
@@ -1237,9 +1237,10 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     if(ratActor){
       const phase=(t*.00048)%1;
       const outward=phase<.55?phase/.55:1-(phase-.55)/.45;
-      ratActor.position.x=28.4+outward*3.25;
-      ratActor.position.y=.28+Math.abs(Math.sin(t*.012))*.08;
-      ratActor.rotation.y=Math.PI/2+(outward>.5?Math.PI:0);
+      ratActor.position.x=-27.35+outward*2.35;
+      ratActor.position.z=-26.0;
+      ratActor.position.y=.08+Math.abs(Math.sin(t*.012))*.025;
+      ratActor.rotation.y=outward>.5?Math.PI/2:-Math.PI/2;
     }
     ambientFliers.forEach((f,i)=>{
       f.object.position.x=f.x+Math.sin(t*.0012+f.phase)*1.7;
@@ -3075,29 +3076,15 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     }
     g.computeVertexNormals();return g;
   }
+  const edgeTrunkGeo=new THREE.CylinderGeometry(.18,.34,2.9,12,3),edgeCrownGeo=[deformCanopy(3),deformCanopy(7),deformCanopy(12)];
+  const edgeTrunkMat=material(0x60412f,.96),edgeLeafMats=[0x294f38,0x356544,0x4b7748].map(c=>material(c,.96));
   function naturalTree(x,z,scale=1,seed=0,solid=true){
-    const bark=material(seed%2?0x60412f:0x6a4732,.96);
-    const leaves=[0x294f38,0x356544,0x4b7748,0x5b804d];
-    const trunk=mesh(new THREE.CylinderGeometry(.18*scale,.34*scale,2.9*scale,12,3),bark,x,1.42*scale,z);
-    trunk.name="Tapered natural tree trunk";
-    for(let k=0;k<4;k++){
-      const a=seed*.67+k*Math.PI*.5,dx=Math.cos(a),dz=Math.sin(a),va=V(x+dx*.16*scale,1.75*scale,z+dz*.16*scale),vb=V(x+dx*1.0*scale,3.25*scale+(k%2)*.25*scale,z+dz*1.0*scale),d=vb.clone().sub(va);
-      const branch=mesh(new THREE.CylinderGeometry(.055*scale,.13*scale,d.length(),8),bark,...[0,0,0]);
-      branch.position.copy(va.add(vb).multiplyScalar(.5));branch.quaternion.setFromUnitVectors(V(0,1,0),d.normalize());
-    }
-    const tiers=[
-      {y:2.25,r:1.35,h:1.42,dx:0,dz:0},
-      {y:3.18,r:1.10,h:1.40,dx:.22,dz:.08},
-      {y:4.08,r:.78,h:1.12,dx:-.13,dz:-.1}
-    ];
+    const trunk=mesh(edgeTrunkGeo,edgeTrunkMat,x,1.42*scale,z);trunk.name="Tapered natural tree trunk";
+    const tiers=[{y:2.25,r:1.35,h:1.42,dx:0,dz:0},{y:3.18,r:1.10,h:1.40,dx:.22,dz:.08},{y:4.08,r:.78,h:1.12,dx:-.13,dz:-.10}];
     tiers.forEach((t,i)=>{
-      const crown=mesh(deformCanopy(seed*5+i+1),material(leaves[(seed+i)%leaves.length],.96),x+t.dx*scale,t.y*scale,z+t.dz*scale);
+      const crown=mesh(edgeCrownGeo[i],edgeLeafMats[(seed+i)%3],x+t.dx*scale,t.y*scale,z+t.dz*scale);
       crown.scale.set(t.r*scale,t.h*.72*scale,t.r*.90*scale);crown.rotation.y=seed*.23+i*.67;crown.name="Layered irregular foliage";
     });
-    for(let k=0;k<4;k++){
-      const a=seed*.4+k*Math.PI/2,root=mesh(new THREE.ConeGeometry(.27*scale,.7*scale,7),bark,x+Math.cos(a)*.30*scale,.24*scale,z+Math.sin(a)*.30*scale);
-      root.rotation.z=Math.cos(a)*.40;root.rotation.x=-Math.sin(a)*.40;
-    }
     if(solid)obstacles.push({x,z,r:1.24*scale,source:"natural-tree"});
   }
   makeTree=function(x,z,scale=1){naturalTree(x,z,scale,Math.round((x+101)*7.1+(z+99)*13.3),true)};
@@ -3108,14 +3095,39 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     const floor=material(0x1c3b31,.98),trail=material(0x746e55,.96),stone=material(0x4b5d4d,.96);
     mesh(new THREE.PlaneGeometry(230,230),floor,0,-.095,0).rotation.x=-Math.PI/2;
     const route=new THREE.CatmullRomCurve3([V(0,-.012,94),V(-6,-.012,62),V(5,-.012,30),V(-7,-.012,-3),V(7,-.012,-36),V(0,-.012,-94)]);
-    mesh(new THREE.TubeGeometry(route,110,5.2,10,false),trail,0,0,0);
+    const points=[],indices=[],segments=120,halfWidth=5.4;
+    for(let i=0;i<=segments;i++){
+      const u=i/segments,p=route.getPointAt(u),t=route.getTangentAt(u),side=V(-t.z,0,t.x).normalize();
+      points.push(p.x+side.x*halfWidth,0,p.z+side.z*halfWidth,p.x-side.x*halfWidth,0,p.z-side.z*halfWidth);
+      if(i<segments){const a=i*2,b=a+1,c=a+2,d=a+3;indices.push(a,b,c,b,d,c)}
+    }
+    const ribbon=new THREE.BufferGeometry();ribbon.setAttribute("position",new THREE.Float32BufferAttribute(points,3));ribbon.setIndex(indices);ribbon.computeVertexNormals();
+    const pathMesh=new THREE.Mesh(ribbon,trail);pathMesh.receiveShadow=true;world.add(pathMesh);
     const random=n=>{const x=Math.sin(n*127.1+79.3)*43758.5453;return x-Math.floor(x)};
-    let seed=1;
+    let seed=1;const trunks=[],branches=[],roots=[],crownA=[],crownB=[],crownC=[];
+    const trunkMat=material(0x60412f,.96),branchGeo=new THREE.CylinderGeometry(.07,.13,1.5,8),rootGeo=new THREE.ConeGeometry(.27,.7,7);
+    const crownGeo=[deformCanopy(2),deformCanopy(5),deformCanopy(9)],crownMat=[0x294f38,0x356544,0x4b7748].map(c=>material(c,.96));
     for(let z=-86;z<=86;z+=17)for(let x=-86;x<=86;x+=18){
       const px=x+(random(seed++)-.5)*7,pz=z+(random(seed++)-.5)*7,center=6*Math.sin(pz*.045);
       if(Math.abs(px-center)<10)continue;
-      naturalTree(px,pz,.88+random(seed++)*.52,seed++,true);
+      const s=.88+random(seed++)*.52;
+      trunks.push({x:px,y:1.42*s,z:pz,sx:.18*s,sy:1.45*s,sz:.18*s,ry:random(seed++)*Math.PI});
+      for(let k=0;k<4;k++){
+        const a=seed*.31+k*Math.PI*.5,dx=Math.cos(a),dz=Math.sin(a);
+        branches.push({x:px+dx*.48*s,y:2.62*s,z:pz+dz*.48*s,sx:.9*s,sy:s,sz:s,rx:dz*.50,rz:-dx*.50,ry:a});
+        roots.push({x:px+dx*.24*s,y:.24*s,z:pz+dz*.24*s,sx:s,sy:s,sz:s,rx:dz*.42,rz:-dx*.42,ry:a});
+      }
+      crownA.push({x:px,y:2.30*s,z:pz,sx:1.30*s,sy:1.03*s,sz:1.18*s,ry:random(seed++)*Math.PI});
+      crownB.push({x:px+.20*s,y:3.22*s,z:pz+.08*s,sx:1.10*s,sy:1.0*s,sz:1.03*s,ry:random(seed++)*Math.PI});
+      crownC.push({x:px-.12*s,y:4.08*s,z:pz-.08*s,sx:.76*s,sy:.83*s,sz:.81*s,ry:random(seed++)*Math.PI});
+      obstacles.push({x:px,z:pz,r:1.24*s,source:"woodland-tree"});
     }
+    instancedBatch("Woodland trunks",new THREE.CylinderGeometry(1,1,2,12),trunkMat,trunks);
+    instancedBatch("Woodland branches",branchGeo,trunkMat,branches);
+    instancedBatch("Woodland roots",rootGeo,trunkMat,roots);
+    instancedBatch("Deep forest canopy",crownGeo[0],crownMat[0],crownA);
+    instancedBatch("Mid forest canopy",crownGeo[1],crownMat[1],crownB);
+    instancedBatch("Upper forest canopy",crownGeo[2],crownMat[2],crownC);
     // Fallen timber, mossy boulders and fern fans give the forest floor scale.
     for(let i=0;i<22;i++){
       const x=(random(i+31)-.5)*150,z=(random(i+91)-.5)*160;
@@ -3194,16 +3206,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   buildEnvironment=function(){previousBuildEnvironment();biomeBorder()};
 
   // Fireflies float gently through the woodland canopy.
-  const previousAnimateWorld=animateWorldDetails;
-  animateWorldDetails=function(dt,t,now){
-    previousAnimateWorld(dt,t,now);
-    for(const o of world.children){
-      const f=o.userData?.wtFirefly;if(!f)continue;
-      const p=t*.0011+f.phase;
-      o.position.set(f.x+Math.sin(p)*1.2,f.y+Math.sin(p*1.4)*.22,f.z+Math.cos(p*.83)*.9);
-      if(f.glow)o.userData.wtFirefly.glow.position.copy(o.position);
-    }
-  };
+  // The existing world animator already advances traffic, kitchen props, rat motion and fireflies.
 
   // A refined locomotive with a weighted chassis, inset window bays, bogies,
   // wheel hubs, door divisions, headlights and warm passenger lighting.
@@ -3270,7 +3273,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       const cam=new THREE.PerspectiveCamera(37,W/H,.1,130);cam.position.set(13,10,16);cam.lookAt(0,1.25,0);
       sc.add(new THREE.HemisphereLight(0xf3f0e1,0x344437,2.0));
       const sun=new THREE.DirectionalLight(id==="night"?0x9bc6dc:0xffdfb4,2.9);sun.position.set(-7,13,9);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sc.add(sun);
-      sc.add(new THREE.DirectionalLight(0x8eb6a4,1.0)).position.set(5,5,-8);
+      const rimLight=new THREE.DirectionalLight(0x8eb6a4,1.0);rimLight.position.set(5,5,-8);sc.add(rimLight);
       const M=(c,r=.78,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
       const add=(geo,mat,x,y,z,sx=1,sy=1,sz=1,ry=0)=>{
         const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.rotation.y=ry;o.castShadow=true;o.receiveShadow=true;sc.add(o);return o;
@@ -3387,7 +3390,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       sc.add(new THREE.HemisphereLight(0xf4f1df,0x354437,2.1));
       const key=new THREE.DirectionalLight(0xffdfb0,3.1);key.position.set(-4,8,5);key.castShadow=true;key.shadow.mapSize.set(1024,1024);sc.add(key);
       const fill=new THREE.DirectionalLight(0x9dc6d7,1.2);fill.position.set(5,4,-5);sc.add(fill);
-      sc.add(new THREE.DirectionalLight(0xffd18b,1.15)).position.set(-5,3,-4);
+      const warmRim=new THREE.DirectionalLight(0xffd18b,1.15);warmRim.position.set(-5,3,-4);sc.add(warmRim);
       const matBody=material(skin.color,.56,.02),gold=material(0xc5a56a,.36,.35),dark=material(0x1b2924,.7);
       const floor=new THREE.Mesh(new THREE.PlaneGeometry(18,14),material(0x3e5942,.98));floor.rotation.x=-Math.PI/2;floor.position.y=-.10;floor.receiveShadow=true;sc.add(floor);
       const backdrop=document.createElement("canvas");backdrop.width=64;backdrop.height=256;
