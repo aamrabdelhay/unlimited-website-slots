@@ -189,8 +189,6 @@ const GAME_ASSETS={
  environment:{bush:'https://gobkit.com/freebies/environment/Bush001.glb',bush2:'https://gobkit.com/freebies/environment/Bush002.glb',grass:'https://gobkit.com/freebies/environment/Grass001.glb',grass2:'https://gobkit.com/freebies/environment/Grass002.glb',cliff:'https://gobkit.com/freebies/environment/Cliff001.glb',cliff2:'https://gobkit.com/freebies/environment/Cliff002.glb',hill:'https://gobkit.com/freebies/environment/Hill001.glb',hill2:'https://gobkit.com/freebies/environment/Hill002.glb',cloud:'https://gobkit.com/freebies/environment/Cloud001.glb',mountain:'https://gobkit.com/freebies/environment/Mountain001.glb'}
 };
 function fitAsset(root,targetHeight=1){const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),scale=targetHeight/Math.max(size.y,.001);root.scale.setScalar(scale);root.position.y=-box.min.y*scale;return root}
-async function loadGameModel(url){if(!gltfLoader)throw new Error('GLTFLoader unavailable');return gltfLoader.loadAsync(url)}
-
 function loadGameModel(url){if(!gltfLoader)return Promise.reject(new Error('GLTFLoader unavailable'));if(!gltfCache.has(url))gltfCache.set(url,gltfLoader.loadAsync(url).catch(error=>{gltfCache.delete(url);throw error}));return gltfCache.get(url)}
 async function loadPlayerModel(){
  const skin=skins[state.skin],url=GAME_ASSETS.animals[skin?.id];if(!url||!player)return;const owner=player,selected=state.skin;
