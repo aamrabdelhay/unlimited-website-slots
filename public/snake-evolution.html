@@ -4,16 +4,17 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#101c2c"><title>Snake Evolution | Unlimited</title>
 <style>
 :root{color-scheme:dark;--glass:rgba(12,20,30,.72);--line:rgba(255,255,255,.16);--gold:#f3c66b;--mint:#8fe0b4}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1720;color:#fff;font-family:Inter,system-ui,"Segoe UI",sans-serif}button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.09);border-radius:14px;padding:10px 14px;transition:.18s}button:hover{background:rgba(255,255,255,.16);border-color:#ffffff55}button:disabled{opacity:.38;cursor:not-allowed}#game{position:fixed;inset:0;background:#172c29}#game canvas{display:block;width:100%;height:100%;touch-action:none}.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,rgba(3,9,15,.35) 100%)}.top{position:fixed;top:env(safe-area-inset-top,12px);left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}.hud,.top-actions{pointer-events:auto;display:flex;gap:8px;align-items:center}.pill,.hud button{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 8px 28px #0003;border-radius:14px;padding:9px 13px;font-size:12px}.pill b{color:var(--gold);font-variant-numeric:tabular-nums}.top-actions button{padding:10px 12px}.brand{font-weight:900;letter-spacing:.12em;color:#fff;text-shadow:0 2px 18px #0008}.brand small{display:block;font-size:9px;letter-spacing:.24em;color:#d9e6d9;font-weight:600}.bottom-hud{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:8px;align-items:center}.bottom-hud button{background:var(--glass);backdrop-filter:blur(12px)}.controls{position:fixed;inset:auto 0 0;pointer-events:none;display:none;justify-content:space-between;align-items:end;padding:0 22px calc(20px + env(safe-area-inset-bottom,0px))}.controls.show{display:flex}.stick-wrap{width:126px;height:126px;position:relative;border-radius:50%;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(5px);pointer-events:auto;touch-action:none;box-shadow:inset 0 0 28px #0002,0 8px 24px #0002}.stick-wrap:after{content:"";position:absolute;inset:12px;border:1px dashed #ffffff22;border-radius:50%}.stick{position:absolute;width:54px;height:54px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:linear-gradient(145deg,#ffffff70,#ffffff20);border:1px solid #ffffff70;box-shadow:0 4px 16px #0005;z-index:2}.stick-label{position:absolute;bottom:-21px;width:100%;text-align:center;font-size:10px;color:#ffffffaa;letter-spacing:.08em}.overlay{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(3,9,15,.34);backdrop-filter:blur(4px);z-index:10;transition:opacity .25s}.overlay.hidden{opacity:0;pointer-events:none}.modal{width:min(900px,96vw);max-height:min(88vh,850px);overflow:auto;border:1px solid #ffffff30;border-radius:26px;background:linear-gradient(145deg,rgba(12,24,32,.91),rgba(11,17,27,.86));box-shadow:0 30px 100px #0009;padding:clamp(18px,3vw,30px);backdrop-filter:blur(22px)}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.eyebrow{font-size:10px;letter-spacing:.25em;color:var(--gold);font-weight:800}.modal h1{font-size:clamp(24px,4vw,42px);margin:5px 0 0;letter-spacing:-.04em}.sub{color:#c1cbd0;font-size:13px;line-height:1.8;margin:8px 0 20px}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.choice{position:relative;text-align:right;min-height:128px;padding:16px;overflow:hidden;background:linear-gradient(145deg,#ffffff14,#ffffff05);border:1px solid #ffffff22;border-radius:18px}.choice:before{content:"";position:absolute;width:110px;height:110px;border-radius:50%;background:var(--glow,#8fe0b4);filter:blur(45px);opacity:.18;left:-22px;bottom:-45px}.choice.selected{border-color:var(--gold);box-shadow:0 0 0 1px #f3c66b55,inset 0 0 35px #f3c66b12}.choice strong{display:block;font-size:16px;position:relative}.choice span{display:block;color:#b9c5c9;font-size:11px;margin-top:7px;line-height:1.6;position:relative}.choice .emoji{font-size:27px;margin-bottom:10px;display:block}.modal-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px}.primary{background:linear-gradient(135deg,#f2cb79,#c28b42);border:0;color:#17202a;font-weight:900;padding:12px 22px}.muted{color:#aab7bd;font-size:11px}.skin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.skin{border:1px solid #ffffff20;border-radius:16px;padding:12px;background:#ffffff0a;min-width:0}.skin.active{border-color:var(--mint);background:#8fe0b414}.skin-art{height:62px;display:grid;place-items:center;font-size:34px;background:radial-gradient(circle,#ffffff15,transparent 70%);border-radius:12px}.skin strong{display:block;font-size:12px;margin-top:8px}.skin small{display:block;color:#b8c5ca;font-size:10px;margin-top:4px}.skin button{width:100%;margin-top:9px;padding:7px;font-size:11px}.map-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.map-choice{min-height:112px}.toast{position:fixed;z-index:20;top:22%;left:50%;transform:translate(-50%,-10px);opacity:0;pointer-events:none;background:#101c2cdd;border:1px solid #ffffff30;border-radius:99px;padding:11px 18px;font-size:12px;transition:.25s;backdrop-filter:blur(10px)}.toast.show{opacity:1;transform:translate(-50%,0)}.rotate{display:none;position:fixed;inset:0;z-index:30;background:#0b1720;place-items:center;text-align:center;padding:30px}.rotate div{max-width:280px}.rotate b{font-size:40px;display:block;margin-bottom:12px}.rotate p{color:#aab7bd;line-height:1.7;font-size:13px}.help{position:fixed;bottom:12px;right:50%;transform:translateX(50%);font-size:10px;color:#ffffff8a;pointer-events:none;white-space:nowrap}@media(max-width:650px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.skin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.modal{padding:17px;border-radius:21px}.top{left:8px;right:8px}.pill{padding:8px 10px}.brand{font-size:12px}.controls{padding-left:18px;padding-right:18px}.stick-wrap{width:112px;height:112px}.stick{width:48px;height:48px}.help{display:none}}@media(orientation:portrait) and (max-width:900px){.rotate{display:grid}.overlay{display:none!important}}@media(max-height:480px) and (orientation:landscape){.modal{max-height:94vh;padding:12px 18px}.modal-head{margin-bottom:8px}.sub{margin:4px 0 10px}.choice{min-height:85px;padding:10px}.choice .emoji{font-size:20px;margin-bottom:4px}.skin-art{height:36px}.skin{padding:8px}.skin-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.modal-foot{margin-top:10px}}
-</style></head>
+#resultPanel{position:fixed;inset:0;z-index:25;display:grid;place-items:center;padding:18px;background:#03090fc9;backdrop-filter:blur(12px)}#resultPanel.hidden{display:none}.result-card{width:min(440px,94vw);padding:26px;border:1px solid #ffffff30;border-radius:26px;background:linear-gradient(145deg,#172a34f5,#0c1724f5);box-shadow:0 25px 90px #0009;text-align:center}.result-card h2{font-size:clamp(25px,5vw,38px);margin:8px 0}.result-card p{color:#b9c5c9;font-size:13px;line-height:1.8}.result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0}.result-stat{padding:12px 6px;border:1px solid #ffffff18;border-radius:14px;background:#ffffff08}.result-stat b{display:block;color:var(--gold);font-size:22px;font-variant-numeric:tabular-nums}.result-stat small{color:#aab7bd;font-size:10px}.result-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.result-actions button{min-width:130px}@media(max-width:420px){.top .pill{font-size:10px;padding:7px 8px}.top .brand{display:none}.bottom-hud{gap:5px}.bottom-hud button{font-size:11px;padding:9px 10px}}</style></head>
 <body>
 <div id="game"></div><div class="vignette"></div>
-<div class="top"><div class="hud"><div class="pill brand">SNAKE EVOLUTION<small>UNLIMITED WORLDS</small></div><div class="pill">COINS <b id="coins">0</b></div><div class="pill">SCORE <b id="score">0</b></div></div><div class="top-actions"><button id="shopBtn">🛍 المتجر</button><button id="menuBtn">☰</button></div></div>
+<div class="top"><div class="hud"><div class="pill brand">SNAKE EVOLUTION<small>UNLIMITED WORLDS</small></div><div class="pill">COINS <b id="coins">0</b></div><div class="pill">SCORE <b id="score">0</b></div><div class="pill">BEST <b id="best">0</b></div></div><div class="top-actions"><button id="shopBtn">🛍 المتجر</button><button id="menuBtn">☰</button></div></div>
 <div class="controls" id="controls"><div class="stick-wrap" id="movePad"><div class="stick" id="moveStick"></div><div class="stick-label">MOVE</div></div><div class="stick-wrap" id="lookPad"><div class="stick" id="lookStick"></div><div class="stick-label">CAMERA</div></div></div>
-<div class="bottom-hud"><button id="pauseBtn">Ⅱ إيقاف</button><button id="boostBtn">⚡ سرعة</button><button id="menuQuick">☰ القائمة</button></div><div class="help" id="help">WASD / الأسهم للحركة · الماوس أو عصا الكاميرا لتغيير الرؤية</div><div class="toast" id="toast"></div>
+<div class="bottom-hud"><button id="pauseBtn">Ⅱ إيقاف</button><button id="boostBtn">⚡ سرعة</button><button id="shieldBtn">🛡 حماية</button><button id="menuQuick">☰ القائمة</button></div><div class="help" id="help">WASD / الأسهم للحركة · الماوس أو عصا الكاميرا لتغيير الرؤية</div><div class="toast" id="toast"></div>
 <div class="rotate"><div><b>↻</b><strong>لف جهازك بالعرض</strong><p>هذه المغامرة مصممة للشاشة الأفقية حتى تستمتع بالعالم المفتوح والتحكم المزدوج.</p></div></div>
 <div class="overlay" id="overlay"><section class="modal"><div class="modal-head"><div><div class="eyebrow">YOUR ADVENTURE STARTS HERE</div><h1 id="stepTitle">اختر عالم اللعب</h1></div><div class="pill">LEVEL <b id="level">1</b></div></div><p class="sub" id="stepSub">ابدأ بالمود الكلاسيكي أو انطلق في عالم ثلاثي الأبعاد واسع.</p><div id="stepContent" class="cards"></div><div class="modal-foot"><span class="muted" id="stepHint">يمكنك تغيير اختياراتك لاحقًا.</span><div style="display:flex;gap:8px"><button id="backBtn">رجوع</button><button class="primary" id="nextBtn">التالي ←</button></div></div></section></div>
+<div id="resultPanel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle"><section class="result-card"><div class="eyebrow">ROUND COMPLETE</div><h2 id="resultTitle">انتهت الجولة</h2><p id="resultReason">حاول مرة أخرى لتحقق نتيجة أعلى.</p><div class="result-stats"><div class="result-stat"><b id="finalScore">0</b><small>النتيجة</small></div><div class="result-stat"><b id="finalBest">0</b><small>أفضل نتيجة</small></div><div class="result-stat"><b id="finalCoins">0</b><small>عملاتك</small></div></div><div class="result-actions"><button class="primary" id="restartBtn">↻ العب مرة أخرى</button><button id="resultMenuBtn">القائمة الرئيسية</button></div></section></div>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+let THREE=null,threeLoadPromise=null;function loadThree(){if(!threeLoadPromise)threeLoadPromise=Promise.any([import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js'),import('https://unpkg.com/three@0.180.0/build/three.module.js')]).then(m=>(THREE=m)).catch(()=>null);return threeLoadPromise;}
 const $=id=>document.getElementById(id);
 const state={mode:null,map:'garden',skin:0,obstacles:true,coins:Number(localStorage.getItem('se-coins')||0),score:0,paused:true,started:false,boost:0};
 const skins=[
@@ -108,5 +109,215 @@ window.addEventListener('keydown',e=>{keys[e.code]=true;if(state.mode==='old'&&c
 function bindStick(padId,stickId,onMove){const pad=$(padId),knob=$(stickId);let pid=null;const move=e=>{const r=pad.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.34,len=Math.hypot(dx,dy),k=Math.min(1,max/(len||1)),x=dx*k,y=dy*k;knob.style.left='calc(50% + '+x+'px)';knob.style.top='calc(50% + '+y+'px)';onMove(x/max,y/max)};pad.addEventListener('pointerdown',e=>{pid=e.pointerId;pad.setPointerCapture(pid);move(e)});pad.addEventListener('pointermove',e=>{if(e.pointerId===pid)move(e)});const end=e=>{if(e.pointerId!==pid)return;pid=null;knob.style.left='50%';knob.style.top='50%';onMove(0,0)};pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end)}
 bindStick('movePad','moveStick',(x,y)=>moveInput={x,y});bindStick('lookPad','lookStick',(x,y)=>lookInput={x,y});
 $('game').addEventListener('pointerdown',e=>{if(state.mode==='old'&&classic){const r=$('game').getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,d=Math.abs(x)>Math.abs(y)?[Math.sign(x),0]:[0,Math.sign(y)];if(d[0]!==-classic.dir.x||d[1]!==-classic.dir.y)classic.next={x:d[0],y:d[1]}}});
+
+/* Release hardening: progression, complete round lifecycle, animated characters and species feeding. */
+state.best=Number(localStorage.getItem('se-best')||0);state.shieldUntil=0;state.magnetUntil=0;state.roundOver=false;state.boostCooldown=0;state.shieldCooldown=0;
+let followerGroups=[];
+function safeSave(key,value){try{localStorage.setItem(key,value)}catch(e){toast('تعذر حفظ التقدم على هذا الجهاز')}}
+owned=function(){try{const v=JSON.parse(localStorage.getItem('se-owned')||'[]');return Array.isArray(v)?v.filter(Number.isInteger):[]}catch{return []}};
+updateWallet=function(){
+ $('coins').textContent=state.coins.toLocaleString();$('score').textContent=state.score.toLocaleString();$('best').textContent=state.best.toLocaleString();$('level').textContent=String(1+Math.floor(state.score/10));
+ safeSave('se-coins',String(state.coins));safeSave('se-best',String(state.best));
+};
+const baseShowStep=showStep;
+showStep=function(step){baseShowStep(step);if(state.shopOnly&&step===2)$('nextBtn').textContent=state.shopReturnToGame?'العودة للعبة':'إغلاق المتجر'};
+function finishGame(reason){
+ if(state.roundOver)return;state.roundOver=true;state.paused=true;state.best=Math.max(state.best,state.score);updateWallet();
+ $('pauseBtn').textContent='▶ انتهت الجولة';$('resultTitle').textContent='انتهت الجولة';$('resultReason').textContent=reason||'أحسنت! حاول تحطيم أفضل نتيجة لديك.';
+ $('finalScore').textContent=state.score.toLocaleString();$('finalBest').textContent=state.best.toLocaleString();$('finalCoins').textContent=state.coins.toLocaleString();
+ $('resultPanel').classList.remove('hidden');$('controls').classList.remove('show');
+}
+function closeResultToMenu(){$('resultPanel').classList.add('hidden');state.roundOver=false;state.paused=true;$('overlay').classList.remove('hidden');state.shopOnly=false;showStep(0)}
+function restartRound(){$('resultPanel').classList.add('hidden');state.roundOver=false;state.score=0;state.paused=false;state.boost=0;state.shieldUntil=0;state.magnetUntil=0;startGame()}
+$('restartBtn').onclick=restartRound;$('resultMenuBtn').onclick=closeResultToMenu;
+$('menuBtn').onclick=$('menuQuick').onclick=()=>{state.paused=true;state.roundOver=false;state.shopOnly=false;$('resultPanel').classList.add('hidden');$('overlay').classList.remove('hidden');showStep(0)};
+state.shopOnly=false;state.shopReturnToGame=false;state.shopWasPaused=true;
+$('shopBtn').onclick=()=>{state.shopOnly=true;state.shopReturnToGame=state.started;state.shopWasPaused=state.paused;if(state.started)state.paused=true;$('resultPanel').classList.add('hidden');$('overlay').classList.remove('hidden');showStep(2)};
+$('nextBtn').onclick=()=>{
+ if(state.shopOnly){state.shopOnly=false;if(state.shopReturnToGame){state.paused=state.shopWasPaused;$('pauseBtn').textContent=state.paused?'▶ استكمال':'Ⅱ إيقاف';$('overlay').classList.add('hidden')}else showStep(0);return}
+ if(state.step===0&&!state.mode){toast('اختر المود أولاً');return}if(state.step<2)showStep(state.step+1);else startGame();
+};
+$('pauseBtn').onclick=()=>{if(state.roundOver)return;state.paused=!state.paused;$('pauseBtn').textContent=state.paused?'▶ استكمال':'Ⅱ إيقاف';if(state.paused)toast('اللعبة متوقفة')};
+$('boostBtn').onclick=()=>{if(state.roundOver||!state.started||state.mode!=='open')return;if(Date.now()<state.boostCooldown){toast('تعزيز السرعة لم يجهز بعد');return}state.boost=Date.now()+3500;state.boostCooldown=Date.now()+9000;toast('⚡ سرعة إضافية لمدة 3.5 ثانية')};
+$('shieldBtn').onclick=()=>{if(state.roundOver||!state.started||state.mode!=='open')return;if(Date.now()<state.shieldCooldown){toast('الدرع لم يجهز بعد');return}state.shieldUntil=Date.now()+5000;state.shieldCooldown=Date.now()+14000;toast('🛡 الدرع نشط لمدة 5 ثوانٍ')};
+spawnFood=function(x,z,parent=world,chunkKey=''){
+ const roll=Math.random();let type='normal',color=0xf3c66b,value=1,shape=new THREE.SphereGeometry(.28,12,9),rough=.38;
+ if(roll<.045){type='bonus';color=0xffd34f;value=5;shape=new THREE.TorusGeometry(.34,.12,8,18);rough=.25}
+ else if(roll<.085){type='speed';color=0x62b6ff;shape=new THREE.TorusGeometry(.28,.1,8,16);rough=.25}
+ else if(roll<.115){type='shield';color=0x74d8e8;shape=new THREE.IcosahedronGeometry(.36,1);rough=.22}
+ else if(roll<.14){type='magnet';color=0xc68aff;shape=new THREE.DodecahedronGeometry(.33,0);rough=.25}
+ const foods={
+  owl:[0xaaa49a,new THREE.SphereGeometry(.2,10,8),'فأر'],cat:[0xe7a6d1,new THREE.TorusGeometry(.25,.1,7,14),'كرة صوف'],
+  croc:[0x67b9e2,new THREE.ConeGeometry(.25,.55,6),'سمكة'],fish:[0x9ee8f1,new THREE.SphereGeometry(.16,8,6),'فقاعة'],
+  bird:[0xd8b66b,new THREE.OctahedronGeometry(.23),'بذور'],falcon:[0xb78e55,new THREE.OctahedronGeometry(.25),'فريسة'],
+  chicken:[0x8fd06a,new THREE.CapsuleGeometry(.12,.25,4,6),'دودة'],duck:[0x8ed3c3,new THREE.CylinderGeometry(.12,.18,.12,10),'طعام البط'],
+  deer:[0x8ab86b,new THREE.SphereGeometry(.22,9,7),'أوراق'],lion:[0xd89d4d,new THREE.ConeGeometry(.24,.45,6),'لحم'],
+  worm:[0xb9a2da,new THREE.SphereGeometry(.19,8,6),'ثمرة']
+ };
+ let label=type;
+ if(type==='normal'&&foods[skins[state.skin].kind]){const spec=foods[skins[state.skin].kind];color=spec[0];shape=spec[1];label=spec[2]}
+ const material=new THREE.MeshStandardMaterial({color,roughness:rough,metalness:type==='bonus'?.18:0,emissive:type==='shield'?0x123744:0,emissiveIntensity:.25});
+ const f=mesh(shape,material,x,.55,z,parent);f.userData={type,value,chunkKey,label,kind:skins[state.skin].kind};
+ if(type==='normal'&&skins[state.skin].kind==='fish')f.material=new THREE.MeshBasicMaterial({color:0xb7f4ff,transparent:true,opacity:.65});
+ foodItems.push(f);return f;
+};
+makeAnimal=function(skin){
+ const g=new THREE.Group(),kind=skin.kind,c=mat(skin.color,.72),dark=mat(0x26313a),white=mat(0xf8f4e9),accent=mat(kind==='lion'?0xd89432:kind==='fish'?0xffc45f:0xe4b35d),sphere=new THREE.SphereGeometry(1,16,12),cone=new THREE.ConeGeometry(.25,.62,8);
+ const part=(geo,m,x,y,z,sx=1,sy=1,sz=1)=>{const o=mesh(geo,m,x,y,z,g);o.scale.set(sx,sy,sz);return o};
+ const body=part(sphere,c,0,.48,.27,kind==='croc'?1.05:.58,.42,kind==='fish'?1.05:.82);
+ const head=part(sphere,c,0,.78,-.38,kind==='croc'?.5:.48,.44,.5),eyes=[],wings=[],legs=[],fins=[];
+ for(const x of [-.2,.2]){part(new THREE.SphereGeometry(.105,9,7),white,x,.86,-.78,.9,1,.65);eyes.push(part(new THREE.SphereGeometry(.052,8,6),dark,x,.86,-.83,.9,1,.7))}
+ if(['bird','chicken','duck','owl','falcon'].includes(kind)){
+  const beak=part(cone,accent,0,.67,-.87,.52,.52,.62);beak.rotation.x=-Math.PI/2;
+  for(const x of [-1,1])wings.push(part(sphere,accent,x*.48,.54,.18,.2,.12,.48));
+  if(kind==='owl')for(const x of [-1,1]){const ear=part(cone,c,x*.31,1.12,-.3,.55,.65,.55);ear.rotation.z=x*.35}
+  if(kind==='chicken')part(cone,mat(0xcf4d42),0,1.17,-.36,.45,.65,.35);
+ }else if(kind==='fish'){
+  const tail=part(new THREE.ConeGeometry(.5,.85,4),accent,0,.48,.95);tail.rotation.x=Math.PI/2;fins.push(tail);const fin=part(cone,accent,0,.92,.22,.8,.45,.7);fin.rotation.x=Math.PI;
+ }else if(kind==='croc'){
+  part(new THREE.BoxGeometry(.55,.22,.72),c,0,.62,-.78,.9,.9,.9);
+  for(let i=0;i<5;i++){const spike=part(cone,accent,0,.91,-.12+i*.22,.42,.5,.42);spike.rotation.x=Math.PI}
+  part(new THREE.ConeGeometry(.3,.95,7),c,0,.42,1.08,.8,.8,1);
+ }else{
+  for(const x of [-1,1]){
+   const ear=part(cone,kind==='lion'?accent:c,x*.34,1.15,-.3,.72,.8,.7);ear.rotation.z=x*-.22;
+   legs.push(part(new THREE.CylinderGeometry(.085,.09,.42,7),dark,x*.3,.19,.28,.9,1,.9));
+  }
+  if(kind==='lion'){part(new THREE.SphereGeometry(.72,14,12),accent,0,.74,-.24,1.05,1.02,.84);head.position.set(0,.86,-.56)}
+  if(kind==='deer')for(const x of [-1,1]){const antler=part(new THREE.CylinderGeometry(.035,.055,.65,6),accent,x*.25,1.48,-.22,.8,1,.8);antler.rotation.z=x*.35}
+  if(kind==='cat')for(const x of [-1,1]){const whisker=part(new THREE.CylinderGeometry(.012,.012,.34,5),white,x*.42,.65,-.76);whisker.rotation.z=x*.45}
+  if(kind==='snake'||kind==='worm'){head.scale.set(.55,.46,.62);body.scale.set(.43,.34,.7)}
+ }
+ g.userData={head,wings,legs,fins,eyes,kind};return g;
+};
+function createFollowerUnit(skin,index){
+ const unit=new THREE.Group(),kind=skin.kind;
+ const egg=(x,z,scale=1)=>{const e=mesh(new THREE.SphereGeometry(.22,10,8),mat(0xf0e8cf),x,.2,z,unit);e.scale.set(.75*scale,1.25*scale,.75*scale);mesh(new THREE.SphereGeometry(.08,8,6),mat(0xb88f62),x,.3,z-.12,unit)};
+ if(kind==='bird'){const nest=mesh(new THREE.TorusGeometry(.48,.12,8,22),mat(0x806045),0,.18,0,unit);nest.rotation.x=Math.PI/2;egg(-.18,-.02,.9);egg(.17,.03,.85)}
+ else if(kind==='croc'){egg(-.18,0,1.15);egg(.18,.08,1.05);egg(0,-.18,.9)}
+ else if(kind==='fish'){const bubble=mesh(new THREE.SphereGeometry(.15,10,8),new THREE.MeshBasicMaterial({color:0xa5efff,transparent:true,opacity:.55}),0,.38,0,unit);bubble.userData.bubble=true}
+ else{
+  const babyColor=kind==='lion'?0xe7b765:kind==='deer'?0xd7a875:kind==='duck'||kind==='chicken'?0xf2d36b:skin.color;
+  const baby=makeAnimal({...skin,color:babyColor});baby.scale.setScalar(kind==='falcon'?.34:.4);baby.position.y=.02;unit.add(baby);unit.userData.baby=baby;
+  if(kind==='chicken'||kind==='duck')egg(.27,.16,.58);
+ }
+ unit.userData.phase=index*1.7;return unit;
+}
+function createCompanions(skin){
+ followerGroups=[];const counts={bird:1,chicken:2,duck:3,owl:2,falcon:3,cat:2,deer:1,croc:1,lion:2,fish:4,worm:1,snake:0},count=counts[skin.kind]||0;
+ for(let i=0;i<count;i++){const unit=createFollowerUnit(skin,i);world.add(unit);followerGroups.push(unit)}
+}
+createPlayer=function(){
+ player=new THREE.Group();world.add(player);const selected=skins[state.skin],head=makeAnimal(selected);player.add(head);player.userData.head=head;bodyParts=[];
+ const segGeo=new THREE.SphereGeometry(.31,12,9),segMat=mat(selected.color,.78);
+ for(let i=0;i<12;i++){const seg=mesh(segGeo,segMat,0,.3,(i+1)*.55,world);seg.scale.set(.92,.78,1.15);bodyParts.push(seg)}
+ player.position.set(0,0,0);heading=0;cameraYaw=0;cameraPitch=.48;path=[];for(let i=0;i<180;i++)path.push(new THREE.Vector3(0,0,i*.12));
+ createCompanions(selected);ensureWorldChunks(0,0);
+};
+clearWorld=function(){
+ if(world){scene.remove(world);world.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose()}})}
+ world=new THREE.Group();scene.add(world);foodItems=[];obstacleItems=[];bodyParts=[];followerGroups=[];path=[];chunks=new Map();
+};
+makeChunk=function(cx,cz){
+ const key=cx+','+cz;if(chunks.has(key))return;const group=new THREE.Group();world.add(group);chunks.set(key,group);
+ let seed=((cx*374761393+cz*668265263)>>>0)||1;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ const cols={street:[0x7b8991,0x9ba9ae],station:[0x737d81,0x9d9b8d],home:[0x98785c,0xc2a27e],kitchen:[0xc4c9c5,0x7699a1]};
+ for(let i=0;i<7;i++){
+  const x=cx*48+rand()*42-21,z=cz*48+rand()*42-21;if(Math.hypot(x-player.position.x,z-player.position.z)<10)continue;
+  if(state.map==='garden'||state.map==='night'){
+   makeTree(x,z,.55+rand()*.85,group);if(i%2===0){const flower=mesh(new THREE.SphereGeometry(.13,7,6),mat([0xe9a6a8,0xf4d36e,0xa8b9ee][i%3]),x,.16,z,group);flower.scale.y=.55}
+   if(state.map==='night'&&i%3===0)mesh(new THREE.SphereGeometry(.16,8,6),new THREE.MeshBasicMaterial({color:0xffe3a1}),x,2.1,z,group);
+  }else if(state.map==='street'){
+   const w=2+rand()*4,h=5+rand()*10;mesh(new THREE.BoxGeometry(w,h,3+rand()*3),mat(cols.street[i%2]),x,h/2,z,group);
+   if(i%3===0){mesh(new THREE.CylinderGeometry(.07,.09,4.2,7),mat(0x454c52),x,2.1,z+3,group);mesh(new THREE.SphereGeometry(.22,8,6),new THREE.MeshBasicMaterial({color:0xffe3a1}),x,4.2,z+3,group)}
+  }else if(state.map==='station'){
+   mesh(new THREE.BoxGeometry(7,.55,7),mat(cols.station[i%2]),x,.28,z,group);mesh(new THREE.BoxGeometry(5,.18,.16),mat(0x343b40,.35,.4),x,.66,z,group);
+   if(i%2===0)mesh(new THREE.BoxGeometry(1.8,2.1,.2),mat(0x405d6a),x,.9,z-2,group);
+  }else if(state.map==='home'){
+   const sofa=mesh(new THREE.BoxGeometry(3,1.1,1.2),mat(cols.home[i%2]),x,.55,z,group);sofa.rotation.y=rand()*Math.PI;
+   mesh(new THREE.BoxGeometry(2,.18,1),mat(0x72533c),x,.38,z-1.1,group);if(i%2===0)mesh(new THREE.CylinderGeometry(.28,.35,.7,10),mat(0x4d805b),x+1.6,.35,z,group);
+  }else{
+   mesh(new THREE.BoxGeometry(1.8,3.8,1.5),mat(0xd8e0df),x,1.9,z,group);mesh(new THREE.BoxGeometry(2.8,1.5,1.4),mat(cols.kitchen[i%2]),x+2,.75,z+1,group);
+   if(i%2===0)mesh(new THREE.CylinderGeometry(.18,.18,.12,12),mat(0xdba94d,.35,.5),x+2,.95,z+1,group);
+  }
+ }
+ if(state.obstacles)for(let i=0;i<2;i++){const x=cx*48+rand()*36-18,z=cz*48+rand()*36-18;if(Math.hypot(x-player.position.x,z-player.position.z)<8)continue;const o=mesh(new THREE.DodecahedronGeometry(.7+rand()*.6,0),mat(state.map==='kitchen'?0x78888a:0x6e6558),x,.6,z,group);o.userData={radius:1.1,chunkKey:key};obstacleItems.push(o)}
+ for(let i=0;i<3;i++)spawnFood(cx*48+rand()*42-21,cz*48+rand()*42-21,group,key);
+};
+updateOpen=function(dt){
+ if(state.roundOver)return;const now=Date.now(),speed=state.boost>now?13:7.2;
+ let ix=moveInput.x,iy=moveInput.y;if(keys.KeyW||keys.ArrowUp)iy=-1;if(keys.KeyS||keys.ArrowDown)iy=1;if(keys.KeyA||keys.ArrowLeft)ix=-1;if(keys.KeyD||keys.ArrowRight)ix=1;
+ const mag=Math.min(1,Math.hypot(ix,iy));if(mag>.12){const target=Math.atan2(ix,-iy),delta=((target-heading+Math.PI*3)%(Math.PI*2))-Math.PI;heading+=clamp(delta,-dt*3.2,dt*3.2)}
+ const forward=new THREE.Vector3(Math.sin(heading),0,-Math.cos(heading));player.position.addScaledVector(forward,speed*dt*(mag>.12?mag:.48));ensureWorldChunks(player.position.x,player.position.z);player.rotation.y=heading;
+ path.unshift(player.position.clone());if(path.length>220)path.length=220;
+ bodyParts.forEach((seg,i)=>{const p=path[Math.min((i+1)*5,path.length-1)];if(p){seg.position.lerp(p,.38);seg.rotation.y=heading}});
+ const elapsed=performance.now()*.001,anim=player.userData.head&&player.userData.head.userData;
+ if(anim){if(anim.head)anim.head.position.y=.78+Math.sin(elapsed*7)*.035;anim.wings.forEach((w,i)=>w.rotation.z=Math.sin(elapsed*12+i*Math.PI)*.42);anim.fins.forEach((f,i)=>f.rotation.z=Math.sin(elapsed*8+i)*.22);anim.legs.forEach((l,i)=>l.rotation.x=Math.sin(elapsed*9+i*Math.PI)*.24)}
+ followerGroups.forEach((unit,i)=>{const p=path[Math.min(34+i*16,path.length-1)];if(!p)return;const side=(i%2?1:-1)*.42;unit.position.set(p.x+Math.cos(heading)*side,.06+Math.sin(elapsed*4+unit.userData.phase)*.05,p.z+Math.sin(heading)*side);unit.rotation.y=heading;
+  if(unit.userData.baby){const a=unit.userData.baby.userData;if(a.wings)a.wings.forEach((w,j)=>w.rotation.z=Math.sin(elapsed*10+unit.userData.phase+j)*.5)}
+  unit.children.forEach(child=>{if(child.userData.bubble){child.position.y=.35+Math.sin(elapsed*2+unit.userData.phase)*.14;child.scale.setScalar(.8+Math.sin(elapsed*3+unit.userData.phase)*.15)}});
+ });
+ cameraYaw-=lookInput.x*dt*2.3;cameraPitch=clamp(cameraPitch-lookInput.y*dt*1.3,.18,1.05);
+ const desired=new THREE.Vector3(player.position.x+Math.sin(heading+cameraYaw)*12,player.position.y+3.5+cameraPitch*5,player.position.z+Math.cos(heading+cameraYaw)*12);
+ camera.position.lerp(desired,.09);camera.lookAt(player.position.x,player.position.y+1,player.position.z);
+ if(foodItems.length<30&&Math.random()<dt*.6){const a=Math.random()*Math.PI*2,r=18+Math.random()*42;spawnFood(player.position.x+Math.cos(a)*r,player.position.z+Math.sin(a)*r)}
+ for(let i=foodItems.length-1;i>=0;i--){
+  const f=foodItems[i];if(!f.parent){foodItems.splice(i,1);continue}f.rotation.y+=dt*1.7;f.position.y=.55+Math.sin(elapsed*2.4+i)*.12;let distance=f.position.distanceTo(player.position);
+  if(state.magnetUntil>now&&distance<11){f.position.lerp(player.position,.055);distance=f.position.distanceTo(player.position)}
+  if(distance<1.35){
+   state.score+=f.userData.value;state.coins+=f.userData.value;updateWallet();
+   if(f.userData.type==='speed'){state.boost=now+4000;toast('⚡ سرعة إضافية')}if(f.userData.type==='shield'){state.shieldUntil=now+6000;toast('🛡 درع حماية نشط')}if(f.userData.type==='magnet'){state.magnetUntil=now+8000;toast('🧲 مغناطيس الطعام')}
+   if(bodyParts.length<48){const seg=mesh(new THREE.SphereGeometry(.31,12,9),mat(skins[state.skin].color,.78),player.position.x,.3,player.position.z,world);bodyParts.push(seg)}
+   if(f.parent)f.parent.remove(f);foodItems.splice(i,1);
+  }
+ }
+ if(state.obstacles&&state.shieldUntil<now){for(const o of obstacleItems){if(o.position.distanceTo(player.position)<1.2){finishGame('اصطدمت بعائق في الخريطة. استخدم الدرع أو اختر اللعب بدون حواجز.');return}}}
+ if(state.shieldUntil<now){for(let i=5;i<bodyParts.length;i++){if(bodyParts[i].position.distanceTo(player.position)<.48){finishGame('اصطدمت بذيلك! حاول الالتفاف بمساحة أوسع.');return}}}
+ if(state.boostCooldown>now)$('boostBtn').textContent='⚡ '+Math.ceil((state.boostCooldown-now)/1000)+'ث';else $('boostBtn').textContent='⚡ سرعة';
+ if(state.shieldCooldown>now)$('shieldBtn').textContent='🛡 '+Math.ceil((state.shieldCooldown-now)/1000)+'ث';else $('shieldBtn').textContent='🛡 حماية';
+};
+startGame=async function(){
+ cancelAnimationFrame(raf);state.score=0;state.roundOver=false;state.paused=false;state.started=true;
+ $('resultPanel').classList.add('hidden');$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ إيقاف';
+ $('controls').classList.toggle('show',state.mode==='open');$('boostBtn').style.display=state.mode==='open'?'':'none';$('shieldBtn').style.display=state.mode==='open'?'':'none';
+ $('help').style.display=state.mode==='old'?'block':'none';
+ if(state.mode==='old'){initClassic();updateWallet();return}
+ toast('جارٍ تجهيز العالم ثلاثي الأبعاد…');
+ if(!await loadThree()){state.paused=true;$('overlay').classList.remove('hidden');showStep(0);toast('تعذر تحميل محرك 3D. المود الكلاسيكي ما زال متاحًا.');return}
+ initRenderer();if(!renderer){state.paused=true;$('overlay').classList.remove('hidden');showStep(0);return}
+ makeEnvironment();createPlayer();updateWallet();clock.start();cancelAnimationFrame(raf);animate();
+};
+animate=function(){raf=requestAnimationFrame(animate);if(!renderer||state.paused||state.mode!=='open'||state.roundOver)return;const dt=Math.min(clock.getDelta(),.04);updateOpen(dt);renderer.render(scene,camera)};
+function classicPalette(){const p={garden:['#9bbc0f','#8bac0f','#0f380f','#306230'],street:['#d8d5c8','#bdb9ae','#27343b','#a05b35'],station:['#c5c7bd','#aeb2a5','#293b48','#b27d3e'],home:['#d4b893','#c3a37f','#57402f','#a65c42'],night:['#111d36','#1b2b48','#d1e2a4','#f5c66b'],kitchen:['#d5dfdc','#c5d0ce','#304e57','#d28b42']};return p[state.map]||p.garden}
+function randomClassicFood(c){let p;do{p={x:2+Math.floor(Math.random()*(c.cols-4)),y:2+Math.floor(Math.random()*(c.rows-4))}}while(c.snake.some(s=>s.x===p.x&&s.y===p.y)||c.obstacles.some(o=>o.x===p.x&&o.y===p.y));return p}
+resizeClassic=function(){if(!classic)return;const c=classic.c,d=Math.min(devicePixelRatio||1,2);c.width=Math.floor(innerWidth*d);c.height=Math.floor(innerHeight*d);classic.cell=Math.max(15,Math.floor(Math.min(c.width,c.height)/25));classic.cols=Math.max(12,Math.floor(c.width/classic.cell));classic.rows=Math.max(10,Math.floor(c.height/classic.cell))};
+initClassic=function(){
+ const host=$('game');host.innerHTML='<canvas id="classic" style="width:100%;height:100%;display:block;image-rendering:pixelated"></canvas>';
+ const c=$('classic'),ctx=c.getContext('2d');classic={c,ctx,snake:[],dir:{x:1,y:0},next:{x:1,y:0},food:{x:16,y:10},obstacles:[],last:0,cell:24,cols:24,rows:18};
+ $('controls').classList.remove('show');$('help').textContent='الأسهم أو WASD للحركة · المس الشاشة لتغيير الاتجاه';resizeClassic();
+ const cx=Math.floor(classic.cols/2),cy=Math.floor(classic.rows/2);classic.snake=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy},{x:cx-3,y:cy}];
+ if(state.obstacles)for(let i=0;i<8;i++){const p={x:3+Math.floor(Math.random()*(classic.cols-6)),y:3+Math.floor(Math.random()*(classic.rows-6))};if(Math.abs(p.x-cx)>5)classic.obstacles.push(p)}
+ classic.food=randomClassicFood(classic);
+ function draw(){
+  const cell=classic.cell,[bg,grid,snakeColor,foodColor]=classicPalette();ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle=grid;for(let x=0;x<classic.cols;x++)for(let y=0;y<classic.rows;y++)if((x+y)%2===0)ctx.fillRect(x*cell,y*cell,cell,cell);
+  if(state.obstacles)classic.obstacles.forEach(o=>{ctx.fillStyle='#29343c';ctx.fillRect(o.x*cell+1,o.y*cell+1,cell-2,cell-2);ctx.fillStyle='#ffffff35';ctx.fillRect(o.x*cell+3,o.y*cell+3,cell-6,Math.max(2,cell*.16))});
+  ctx.fillStyle=foodColor;ctx.font=Math.floor(cell*.86)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+  const emoji={owl:'🐭',cat:'🧶',croc:'🐟',fish:'🫧',bird:'🌰',falcon:'🐁',chicken:'🪱',duck:'🌿',deer:'🍃',lion:'🍖',worm:'🍎',snake:'🍎'}[skins[state.skin].kind]||'●';ctx.fillText(emoji,(classic.food.x+.5)*cell,(classic.food.y+.5)*cell);
+  classic.snake.forEach((p,i)=>{ctx.fillStyle=snakeColor;const inset=i?2:1;ctx.fillRect(p.x*cell+inset,p.y*cell+inset,cell-inset*2,cell-inset*2);if(i===0){ctx.fillStyle='#f4f8d4';const ex=classic.dir.x?0:cell*.28,ey=classic.dir.y?0:cell*.28;ctx.fillRect(p.x*cell+cell*.28+ex,p.y*cell+cell*.28+ey,Math.max(2,cell*.13),Math.max(2,cell*.13));ctx.fillRect(p.x*cell+cell*.58+ex,p.y*cell+cell*.28+ey,Math.max(2,cell*.13),Math.max(2,cell*.13))}});
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle=state.map==='night'?'#f2f4d9':'#17242a';ctx.font='bold '+Math.max(13,Math.floor(cell*.58))+'px monospace';ctx.fillText('NOKIA SNAKE  ·  '+state.score,18,Math.max(26,cell*1.2));
+ }
+ function tick(t){
+  raf=requestAnimationFrame(tick);if(state.mode!=='old'||state.paused||state.roundOver)return;
+  const interval=Math.max(76,125-state.score*.65);if(t-classic.last<interval)return;classic.last=t;classic.dir=classic.next;
+  const h={x:classic.snake[0].x+classic.dir.x,y:classic.snake[0].y+classic.dir.y};
+  const wall=h.x<0||h.y<0||h.x>=classic.cols||h.y>=classic.rows,self=classic.snake.some((p,i)=>i>0&&p.x===h.x&&p.y===h.y),barrier=state.obstacles&&classic.obstacles.some(p=>p.x===h.x&&p.y===h.y);
+  if(wall||self||barrier){finishGame(wall?'اصطدمت بحافة الملعب.':'اصطدمت بجسم أو حاجز.');return}
+  classic.snake.unshift(h);if(h.x===classic.food.x&&h.y===classic.food.y){state.score++;state.coins++;updateWallet();classic.food=randomClassicFood(classic)}else classic.snake.pop();draw();
+ }
+ draw();raf=requestAnimationFrame(tick);
+};
+$('game').addEventListener('pointerdown',e=>{if(state.mode==='old'&&classic&&!state.paused&&!state.roundOver){const r=$('game').getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,d=Math.abs(x)>Math.abs(y)?[Math.sign(x),0]:[0,Math.sign(y)];if(d[0]!==-classic.dir.x||d[1]!==-classic.dir.y)classic.next={x:d[0],y:d[1]}}});
+
 showStep(0);updateWallet();
 </script></body></html>
