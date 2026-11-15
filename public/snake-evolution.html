@@ -881,32 +881,41 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 
   // Replace solid building blocks with enterable shells and visible interiors.
   addBuilding = function(x,z,w,d,h,color,index){
-    const roadFacing = x>0 ? -1 : 1;
-    const frontX = x + roadFacing*(w/2);
-    const sideColor = [0x857b6b,0x9b8d78,0x6e7978,0x966d5d][index%4];
-    addBox(x,.08,z,w,.16,d,0x6f685c,false);
-    addBox(x,h+.12,z,w+.45,.24,d+.45,0x3d4947,false);
-    // Back and side walls.
-    addBox(x-roadFacing*w/2, h/2,z,.55,h,d,sideColor,true);
-    addBox(x-roadFacing*w/2, h/2,z+d/2-.25,w,h,.55,sideColor,true);
-    addBox(x-roadFacing*w/2, h/2,z-d/2+.25,w,h,.55,sideColor,true);
-    const doorHalf=2.35, segment=(d-2*doorHalf)/2;
+    const roadFacing=x>0?-1:1;
+    const frontX=x+roadFacing*(w/2),backX=x-roadFacing*(w/2);
+    const palette=[0x8e958d,0xb09e84,0x77878a,0x9a715d],sideColor=palette[index%palette.length];
+    const trim=[0x3d4a49,0x5d5145,0x485d59][index%3];
+    // Floor, roof fascia, and a real open shopfront rather than a solid block.
+    addBox(x,.08,z,w,.16,d,0x716a5d,false);
+    addBox(x,h+.12,z,w+.65,.24,d+.65,trim,false);
+    addBox(x,h+.31,z,w+.36,.14,d+.36,0xbab09b,false);
+    // Solid rear wall and the two side walls; the street-facing side has a door.
+    addBox(backX,h/2,z,.58,h,d,sideColor,true);
+    addBox(x,h/2,z-d/2,w,h,.58,sideColor,true);
+    addBox(x,h/2,z+d/2,w,h,.58,sideColor,true);
+    const doorHalf=2.5,segment=Math.max(.5,(d-2*doorHalf)/2);
     addBox(frontX,h/2,z-(doorHalf+segment/2),.62,h,segment,sideColor,true);
     addBox(frontX,h/2,z+(doorHalf+segment/2),.62,h,segment,sideColor,true);
-    addBox(frontX,h-.55,z,.68,1.1,doorHalf*2,0x514d43,false);
+    // Door header is visible but high enough to pass under; never a floor collider.
+    addBox(frontX,h-.42,z,.72,.84,doorHalf*2,trim,false);
     for(const dz of [-doorHalf,doorHalf]){
-      addBox(frontX,h/2,z+dz,.18,h,.18,0x514b40,true);
-      addBox(frontX+roadFacing*.08,3.7,z+dz*1.55,.08,1.4,1.05,0x77a0a4,false);
+      addBox(frontX,h/2,z+dz,.20,h,.20,trim,true);
+      addBox(frontX+roadFacing*.06,h*.62,z+dz*1.5,.08,1.45,1.05,0x85b6bb,false);
     }
-    addBox(frontX+roadFacing*.12,1.3,z,1.25,.08,5.3,0xb69b72,false);
-    // Interior side counter, rear shelf and warm lighting.
-    addBox(x-roadFacing*1.55,.95,z-4.3,1.4,1.9,5.6,index%2?0x6d8276:0x8e7259,true);
-    addBox(x-roadFacing*1.55,2.0,z-4.3,1.55,.16,5.8,0xd2c3a5,false);
-    for(let n=0;n<3;n++){
-      addBox(x-roadFacing*1.5,2.55,z-5.8+n*1.35,1.3,.10,1.1,0x9c805b,false);
-      addBox(x-roadFacing*1.48,2.9,z-5.8+n*1.35,.85,.52,.8,[0x8a6d54,0x5d7d80,0x9a9a79][n],false);
+    addBox(frontX+roadFacing*.12,1.15,z,1.35,.10,5.35,0xbba078,false);
+    // A striped awning and fascia make the building readable from the road.
+    addBox(frontX+roadFacing*.22,h-.95,z,1.25,.20,doorHalf*2+.5,index%2?0x9b5948:0x557d7b,false);
+    for(let k=-2;k<=2;k++)addBox(frontX+roadFacing*.25,h-1.08,z+k*.85,.10,.34,.62,k%2?0xe3d4b7:0x425b59,false);
+    // Interior: counters, shelving, a register, and a lit wall fixture.
+    const counterX=frontX-roadFacing*2.1;
+    addBox(counterX,.95,z-4.1,1.25,1.9,5.2,index%2?0x6c8278:0x8e7158,true);
+    addBox(counterX,1.94,z-4.1,1.42,.16,5.5,0xd8c8a9,false);
+    for(let n=0;n<4;n++){
+      addBox(backX-roadFacing*.52,2.15+n*.82,z-4.8,1.05,.12,5.8,0x765c44,false);
+      for(let k=0;k<3;k++)addBox(backX-roadFacing*.7,2.55+n*.82,z-5.7+k*1.8,.38,.56,.46,[0x8b6548,0x567f82,0xc19a5e][(k+n)%3],false);
     }
-    addBox(x-roadFacing*1.5,4.6,z,1.5,.12,1.5,0xd9c58d,false);
+    addBox(counterX-roadFacing*.08,2.12,z-1.7,.65,.25,.5,0x39433f,false);
+    addBox(backX-roadFacing*.60,h*.72,z,1.2,.12,1.1,0xffdf9a,false);
   };
 
   // Higher tessellation makes existing sculpted animals read as solid, rounded
@@ -1054,6 +1063,12 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       for(const x of [-20.2,-15.8])addBox(x,.32,0,.18,.22,230,0x4c5656,false);
       const train=buildPassingTrain();train.position.set(-18,0,-116);world.add(train);
       dynamicHazards.push({kind:'train',object:train,x:-18,z:-116,halfX:2.8,halfZ:15,direction:1,speed:15.5});
+      // Broad, visible boarding steps on each parked carriage.
+      const stepXs=[7.9,7.2,6.5,5.8,5.1],stepHeights=[.55,1.1,1.65,2.2,2.75];
+      for(const center of [-34,-5,24]){
+        stepXs.forEach((x,i)=>addBox(x,stepHeights[i]/2,center,1.12,stepHeights[i],4.2,i%2?0x6b6457:0x8c795e,false));
+        addBox(4.82,2.86,center,1.5,.12,4.1,0x586d70,false);
+      }
     }
     if(state.map==='street'){
       const colors=[0xb54c42,0x397681,0xd0a34c,0x52795b,0x69717a,0xb5b1a1];
@@ -1161,10 +1176,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       tvContext.fillStyle='#294b42';tvContext.fillRect(0,96,256,48);
       tvContext.fillStyle='#a9c8c8';tvContext.fillRect(0,0,256,96);
       tvContext.fillStyle='#e8ce91';tvContext.beginPath();tvContext.arc(210,24,12,0,Math.PI*2);tvContext.fill();
-      const cx=128+Math.sin(t*.001)*35,cy=89;
-      tvContext.strokeStyle='#f0c45f';tvContext.lineWidth=13;tvContext.lineCap='round';
-      tvContext.beginPath();tvContext.moveTo(cx-42,cy+10);tvContext.lineTo(cx-18,cy-3);tvContext.lineTo(cx+8,cy+7);tvContext.lineTo(cx+34,cy-10);tvContext.stroke();
-      tvContext.fillStyle='#d59b55';tvContext.beginPath();tvContext.arc(cx+38,cy-16,13,0,Math.PI*2);tvContext.fill();
+      const cx=128+Math.sin(t*.001)*35,cy=88,skin=skins[state.skin]||skins[0];
+      const bodyColor='#'+skin.color.toString(16).padStart(6,'0'),accentColor='#'+skin.accent.toString(16).padStart(6,'0');
+      tvContext.strokeStyle=bodyColor;tvContext.lineWidth=14;tvContext.lineCap='round';tvContext.lineJoin='round';
+      tvContext.beginPath();tvContext.moveTo(cx-48,cy+12);tvContext.lineTo(cx-26,cy-5);tvContext.lineTo(cx-4,cy+9);tvContext.lineTo(cx+18,cy-2);tvContext.lineTo(cx+36,cy-13);tvContext.stroke();
+      tvContext.fillStyle=accentColor;tvContext.beginPath();tvContext.arc(cx+39,cy-17,14,0,Math.PI*2);tvContext.fill();
+      tvContext.fillStyle='#f8f1db';tvContext.beginPath();tvContext.arc(cx+43,cy-20,3,0,Math.PI*2);tvContext.fill();
+      tvContext.strokeStyle='#f4d58d';tvContext.lineWidth=3;tvContext.beginPath();tvContext.moveTo(cx-20,cy+20);tvContext.lineTo(cx-20,cy+30);tvContext.moveTo(cx+13,cy+17);tvContext.lineTo(cx+13,cy+29);tvContext.stroke();
       tvContext.fillStyle='#f5e8c8';tvContext.font='bold 12px sans-serif';tvContext.fillText('WILD TRAILS',12,18);
       tvTexture.needsUpdate=true;
     }
@@ -1191,6 +1209,20 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   gameSurface.addEventListener('pointercancel',releaseCameraDrag,true);
   gameSurface.addEventListener('lostpointercapture',releaseCameraDrag,true);
 
+
+  function stationTrainHeightAt(x,z){
+    if(state.map!=='station')return 0;
+    for(const center of [-34,-5,24]){
+      if(Math.abs(z-center)>12.3)continue;
+      if(x>=.12&&x<=4.65)return 2.78;
+      if(x>4.65&&x<=8.35)return 2.78*clamp((8.35-x)/3.70,0,1);
+    }
+    return 0;
+  }
+  function stationTrainRouteAt(x,z){
+    return state.map==='station'&&[-34,-5,24].some(center=>Math.abs(z-center)<=12.8)&&x>=.05&&x<=8.65;
+  }
+
   updateOpen=function(dt,t){
     if(!player||!world)return;
     const now=Date.now();let ix=moveInput.x,iy=moveInput.y;
@@ -1212,15 +1244,17 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     // Thematic world edge is a solid boundary, not an abrupt white void/death.
     nextX=clamp(nextX,-96.2,96.2);nextZ=clamp(nextZ,-96.2,96.2);
     const phased=(state.phaseUntil||0)>now||(state.shieldUntil||0)>now;
+    const elevatedY=stationTrainHeightAt(nextX,nextZ);
+    const onTrainRoute=stationTrainRouteAt(nextX,nextZ);
     let resolvedX=nextX,resolvedZ=nextZ;
-    if(!phased&&collidesAt(resolvedX,resolvedZ,.78)){
+    if(!phased&&!onTrainRoute&&collidesAt(resolvedX,resolvedZ,.78)){
       const xFree=!collidesAt(resolvedX,player.position.z,.78);
       const zFree=!collidesAt(player.position.x,resolvedZ,.78);
       if(xFree&&(!zFree||Math.abs(nextX-player.position.x)>=Math.abs(nextZ-player.position.z)))resolvedZ=player.position.z;
       else if(zFree)resolvedX=player.position.x;
       else{resolvedX=player.position.x;resolvedZ=player.position.z}
     }
-    player.position.x=resolvedX;player.position.z=resolvedZ;player.rotation.y=-heading;
+    player.position.x=resolvedX;player.position.z=resolvedZ;player.position.y=stationTrainHeightAt(resolvedX,resolvedZ);player.rotation.y=-heading;
     // Dynamic traffic and the express train are lethal on contact.
     if(!phased){
       for(const hazard of dynamicHazards){
@@ -1334,6 +1368,31 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       const p=classic.power,px=p.x*cell+cell/2,py=p.y*cell+cell/2,phase=t*.006;
       ctx.save();ctx.translate(px,py);ctx.rotate(phase);ctx.fillStyle=p.type==='speed'?'#54c9ff':'#ff9c67';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=cell*.5;
       ctx.beginPath();ctx.moveTo(0,-cell*.48);ctx.lineTo(cell*.4,0);ctx.lineTo(0,cell*.48);ctx.lineTo(-cell*.4,0);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    }
+    ctx.restore();
+  };
+
+  const baseClassicObstacleDraw=drawClassicObstacle;
+  drawClassicObstacle=function(ctx,o,cell){
+    baseClassicObstacleDraw(ctx,o,cell);
+    const size=cell*1.72,cx=o.x*cell+cell*.5,cy=o.y*cell+cell*.5;
+    ctx.save();ctx.translate(cx,cy);ctx.lineCap='round';ctx.lineJoin='round';
+    if(o.kind==='car'){
+      ctx.fillStyle='#b8d4d8';ctx.globalAlpha=.92;
+      ctx.beginPath();ctx.roundRect(-size*.25,-size*.40,size*.5,size*.24,size*.06);ctx.fill();
+      ctx.fillStyle='#fff0b2';ctx.globalAlpha=1;
+      ctx.beginPath();ctx.arc(-size*.26,-size*.39,size*.045,0,Math.PI*2);ctx.arc(size*.26,-size*.39,size*.045,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#ffffff80';ctx.lineWidth=Math.max(1,cell*.035);ctx.beginPath();ctx.moveTo(-size*.32,size*.04);ctx.lineTo(size*.32,size*.04);ctx.stroke();
+    }else if(o.kind==='tree'||o.kind==='bush'||o.kind==='plant'){
+      ctx.strokeStyle='#b3d58a';ctx.globalAlpha=.55;ctx.lineWidth=Math.max(1,cell*.045);
+      for(const [x,y,r] of [[-.24,-.28,.15],[.12,-.42,.17],[.32,-.10,.13]]){
+        ctx.beginPath();ctx.arc(x*size,y*size,r*size,0,Math.PI*2);ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }else if(['bench','table','sofa','chair','cabinet'].includes(o.kind)){
+      ctx.strokeStyle='#e7cf9b';ctx.lineWidth=Math.max(1,cell*.045);
+      ctx.beginPath();ctx.moveTo(-size*.32,-size*.13);ctx.lineTo(size*.32,-size*.13);ctx.stroke();
+      ctx.fillStyle='#eadab8';ctx.fillRect(-size*.19,-size*.06,size*.08,size*.08);ctx.fillRect(size*.11,-size*.06,size*.08,size*.08);
     }
     ctx.restore();
   };
