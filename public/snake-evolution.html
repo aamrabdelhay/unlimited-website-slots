@@ -118,6 +118,7 @@
   const wtMaterialCache=new Map();
   let wtPackPromise=null;
   const wtAmbientMeshes=[];
+  const wtCeilingMeshes=[];
 
   function wtHex(n){return '#'+(Number(n)>>>0).toString(16).padStart(6,'0')}
   function wtMixHex(a,b,t){
@@ -291,7 +292,7 @@
     if(state.map!=='home'&&state.map!=='kitchen')return;
     const kitchen=state.map==='kitchen',base=kitchen?0x53675f:0x57483a,beam=kitchen?0x354c45:0x3c2e25;
     const roofMat=new THREE.MeshStandardMaterial({color:base,roughness:.88,side:THREE.DoubleSide,transparent:true,opacity:.58,depthWrite:false});
-    const roof=mesh(new THREE.PlaneGeometry(196,196),roofMat,0,12.15,0,world);roof.rotation.x=-Math.PI/2;roof.name='Translucent enclosed interior ceiling';roof.userData.wtCeiling=true;
+    const roof=mesh(new THREE.PlaneGeometry(196,196),roofMat,0,12.15,0,world);roof.rotation.x=-Math.PI/2;roof.name='Translucent enclosed interior ceiling';roof.userData.wtCeiling=true;wtCeilingMeshes.push(roof);
     for(let p=-88;p<=88;p+=22){
       wtDecorBox(p,11.92,-0,196,.20,.34,beam,.9);
       wtDecorBox(0,11.92,p,.34,.20,196,beam,.9);
@@ -408,6 +409,7 @@
     instancedBatch('Bioluminescent mushroom stems',new THREE.CylinderGeometry(.72,.82,1,8),stem,items);
   }
   function wtAddMapArt(){
+    wtAmbientMeshes.length=0;wtCeilingMeshes.length=0;
     if(state.map==='garden')wtAddGardenDetails();
     else if(state.map==='street')wtAddStreetDetails();
     else if(state.map==='station')wtAddStationDetails();
@@ -513,13 +515,7 @@
       if(item.glow?.material?.color)item.glow.material.opacity=pulse;
       if(item.shade?.material)item.shade.material.emissiveIntensity=.10+.08*pulse;
     }
-    if(world){
-      world.traverse(o=>{
-        if(!o.userData?.wtCeiling||!o.material)return;
-        const target=camera?.position?.y>11.6?.12:.58;
-        o.material.opacity+=(target-o.material.opacity)*.08;
-      });
-    }
+    for(const o of wtCeilingMeshes){if(!o.material)continue;const target=camera?.position?.y>11.6?.12:.58;o.material.opacity+=(target-o.material.opacity)*.08;}
   };
 })();
 
