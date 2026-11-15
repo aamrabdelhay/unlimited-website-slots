@@ -678,7 +678,7 @@ function updateOpen(dt,t){
  const active=[];if(state.boostUntil>now)active.push('سرعة '+Math.ceil((state.boostUntil-now)/1000)+'ث');if(state.shieldUntil>now)active.push('درع '+Math.ceil((state.shieldUntil-now)/1000)+'ث');if(state.magnetUntil>now)active.push('مغناطيس '+Math.ceil((state.magnetUntil-now)/1000)+'ث');$('powerReadout').textContent=active.length?active.join('  ·  '):'التقط العناصر المضيئة للحصول على قدرات';
 }
 
-function finishRound(reason){if(state.roundOver)return;state.roundOver=true;state.paused=true;stopLoop();state.best=Math.max(state.best,state.score);updateHud();$('resultReason').textContent=reason;$('resultScore').textContent=state.score.toLocaleString();$('result').classList.remove('hidden');$('touchControls').classList.remove('show');$('classicPad').classList.remove('show')}
+function finishRound(reason){if(state.roundOver)return;state.roundOver=true;state.paused=true;stopLoop();state.best=Math.max(state.best,state.score);updateHud();$('resultReason').textContent=reason;$('resultScore').textContent=state.score.toLocaleString();$('result').classList.remove('hidden');$('touchControls').classList.remove('show')}
 
 function classicResize(){
  if(!classic)return;const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),d=Math.min(devicePixelRatio||1,1.45),c=classic.canvas;c.width=Math.floor(w*d);c.height=Math.floor(h*d);c.style.width=w+'px';c.style.height=h+'px';classic.ctx.setTransform(d,0,0,d,0,0);classic.w=w;classic.h=h;classic.cell=Math.max(21,Math.floor(Math.min(w,h)/24));classic.cols=Math.max(12,Math.floor(w/classic.cell));classic.rows=Math.max(10,Math.floor(h/classic.cell));
@@ -732,7 +732,7 @@ function classicFrame(t){
 }
 function initClassic(){
  const canvas=document.createElement('canvas');canvas.className='classic-canvas';$('game').replaceChildren(canvas);const ctx=canvas.getContext('2d',{alpha:false});classic={canvas,ctx,snake:[],dir:{x:1,y:0},next:{x:1,y:0},food:{x:3,y:3},last:performance.now(),w:0,h:0,cell:20,cols:20,rows:16,obstacles:[]};
- $('classicKnob').style.left='50%';$('classicKnob').style.top='50%';classicResize();const cx=Math.floor(classic.cols/2),cy=Math.floor(classic.rows/2);classic.snake=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy},{x:cx-3,y:cy}];classic.obstacles=buildClassicObstacles();classic.food=spawnClassicFood();$('touchControls').classList.remove('show');$('classicPad').classList.add('show');drawClassic();
+ classicResize();const cx=Math.floor(classic.cols/2),cy=Math.floor(classic.rows/2);classic.snake=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy},{x:cx-3,y:cy}];classic.obstacles=buildClassicObstacles();classic.food=spawnClassicFood();$('touchControls').classList.remove('show');drawClassic();
 }
 
 function setClassicDirection(dir){if(!classic)return;const d={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}}[dir],base=classic.next||classic.dir;if(d&&!(d.x===-base.x&&d.y===-base.y))classic.next=d}
@@ -745,11 +745,37 @@ function bindStick(padId,knobId,callback){
  pad.addEventListener('pointermove',e=>{if(e.pointerId===pointer)move(e)});pad.addEventListener('pointerup',e=>{if(e.pointerId===pointer)reset()});pad.addEventListener('pointercancel',e=>{if(e.pointerId===pointer)reset()});
  pad.addEventListener('lostpointercapture',()=>{if(pointer!==null)reset()});pad.addEventListener('contextmenu',e=>e.preventDefault());
 }
-bindStick('movePad','moveKnob',(x,y)=>moveInput={x,y});bindStick('lookPad','lookKnob',(x,y)=>lookInput={x,y});
-bindStick('classicPad','classicKnob',(x,y)=>{if(!classic||Math.hypot(x,y)<.48)return;setClassicDirection(Math.abs(x)>Math.abs(y)?(x<0?'left':'right'):(y<0?'up':'down'))});
+bindStick('movePad','moveKnob',(x,y)=>moveInput={x,y});
+function applyStickScale(value){const n=clamp(Number(value)||100,70,155);document.documentElement.style.setProperty('--stick-scale',String(n/100));$('stickScale').value=String(n);$('stickScaleValue').textContent=n+'%';try{localStorage.setItem('wild-stick-scale',String(n))}catch{}}
+function bindSettings(){let saved=100;try{saved=Number(localStorage.getItem('wild-stick-scale'))||100}catch{}applyStickScale(saved);$('settingsBtn').addEventListener('click',()=>{$('settingsPanel').classList.toggle('hidden')});$('settingsClose').addEventListener('click',()=>$('settingsPanel').classList.add('hidden'));$('stickScale').addEventListener('input',e=>applyStickScale(e.target.value));document.addEventListener('pointerdown',e=>{if(!$('settingsPanel').contains(e.target)&&e.target!==$('settingsBtn'))$('settingsPanel').classList.add('hidden')})}
+function bindDirectGameGestures(){
+ const area=$('game');let gesture=null;
+ area.addEventListener('pointerdown',e=>{if(!state.started||state.paused||state.roundOver||!area.contains(e.target))return;if(e.target.closest?.('button'))return;e.preventDefault();gesture={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,kind:state.mode==='old'?'classic':(e.clientX>innerWidth*.52?'camera':'move')};try{area.setPointerCapture(e.pointerId)}catch{}});
+ area.addEventListener('pointermove',e=>{if(!gesture||gesture.id!==e.pointerId||state.mode!=='open'||gesture.kind!=='camera')return;const dx=e.clientX-gesture.lastX,dy=e.clientY-gesture.lastY;gesture.lastX=e.clientX;gesture.lastY=e.clientY;cameraYaw-=dx*.007;cameraPitch=clamp(cameraPitch+dy*.004,.16,.78)});
+ const finish=e=>{if(!gesture||gesture.id!==e.pointerId)return;const g=gesture;gesture=null;const dx=e.clientX-g.x,dy=e.clientY-g.y,len=Math.hypot(dx,dy);if(g.kind==='classic'){if(len>24){const dir=Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down');setClassicDirection(dir)}}else if(g.kind==='move'&&len>22){moveInput={x:clamp(dx/len,-1,1),y:clamp(dy/len,-1,1)}}};
+ area.addEventListener('pointerup',finish);area.addEventListener('pointercancel',finish);area.addEventListener('lostpointercapture',e=>{if(gesture&&gesture.id===e.pointerId)gesture=null});
+}
+bindSettings();bindDirectGameGestures();
 
 window.addEventListener('keydown',e=>{keys[e.code]=true;if(state.mode==='old'){const map={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};if(map[e.code])setClassicDirection(map[e.code])}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault()});window.addEventListener('keyup',e=>keys[e.code]=false);window.addEventListener('resize',()=>{if(state.mode==='old'&&classic){classicResize();drawClassic()}resize3D()});window.visualViewport?.addEventListener('resize',()=>{if(state.mode==='old'&&classic){classicResize();drawClassic()}resize3D()});
-function startGame(){stopLoop();state.roundOver=false;state.score=0;state.paused=false;state.started=true;state.boostUntil=state.shieldUntil=state.magnetUntil=0;$('result').classList.add('hidden');$('overlay').classList.add('hidden');$('pauseBtn').textContent='إيقاف';$('powerReadout').textContent='التقط العناصر المضيئة للحصول على قدرات';$('classicPad').classList.toggle('show',state.mode==='old');$('touchControls').classList.toggle('show',state.mode==='open');updateHud();if(state.mode==='old'){initClassic();startLoop();return}startOpenGame()}
+
+let thumbnailRenderer=null;
+async function renderAnimalPreviewImage(skin,landscape=false){
+ if(!await loadThree())return null;
+ try{if(!thumbnailRenderer)thumbnailRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:'low-power'});thumbnailRenderer.setPixelRatio(1);thumbnailRenderer.setSize(480,300,false);
+  const sc=new THREE.Scene();sc.background=new THREE.Color(landscape?0x9eb7b2:0x26372d);const cam=new THREE.PerspectiveCamera(36,480/300,.1,60);cam.position.set(3.6,2.8,4.7);cam.lookAt(0,.85,0);
+  sc.add(new THREE.HemisphereLight(0xe9f1e6,0x39483b,2));const key=new THREE.DirectionalLight(0xffe2b5,2.4);key.position.set(3,7,4);sc.add(key);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(18,18),new THREE.MeshStandardMaterial({color:landscape?0x52794a:0x455c42,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.05;sc.add(ground);
+  if(landscape){const road=new THREE.Mesh(new THREE.BoxGeometry(1.5,.035,14),new THREE.MeshStandardMaterial({color:0xc8b58a}));road.position.y=.01;sc.add(road);for(const [x,z] of [[-2.7,-2.5],[2.8,-1.6],[-3.4,2.2],[3.2,3.1]]){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.14,.2,1.5,8),new THREE.MeshStandardMaterial({color:0x68472f}));trunk.position.set(x,.75,z);sc.add(trunk);const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.88,1),new THREE.MeshStandardMaterial({color:0x32613c,roughness:.92}));crown.position.set(x,1.85,z);sc.add(crown)}}
+  const model=createAnimal(skin);model.rotation.y=-.32;model.position.y=.02;sc.add(model);const food=createPreyModel(skin.id);food.position.set(1,.38,.1);food.scale.setScalar(.72);sc.add(food);
+  if(skin.id==='snake'||skin.id==='worm'){const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,.32,.35),new THREE.Vector3(.08,.28,.9),new THREE.Vector3(-.12,.31,1.45),new THREE.Vector3(.04,.28,1.95)]);sc.add(new THREE.Mesh(new THREE.TubeGeometry(curve,32,.25,12,false),mat(skin.color,.76)))}
+  thumbnailRenderer.render(sc,cam);const data=thumbnailRenderer.domElement.toDataURL('image/webp',.86);sc.traverse(o=>{if(o.geometry)o.geometry.dispose()});return data;
+ }catch(e){console.warn('Preview render failed',e);return null}
+}
+function renderModePreviews(){const host=$('stepContent'),old=host.querySelector('[data-mode-preview="old"]');if(old)renderClassicModePreview(old);const canvas=host.querySelector('[data-mode-preview="open"]');if(canvas)renderAnimalPreviewImage(skins[state.skin]||skins[0],true).then(src=>{if(!src||!canvas.isConnected)return;const image=new Image();image.onload=()=>{const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height)};image.src=src})}
+function renderCreaturePreviews(){const imgs=[...$('stepContent').querySelectorAll('img[data-skin]')];if(!imgs.length)return;loadThree().then(async()=>{for(const img of imgs){if(!img.isConnected)continue;const skin=skins.find(x=>x.id===img.dataset.skin);if(!skin)continue;const src=await renderAnimalPreviewImage(skin,false);if(src&&img.isConnected)img.src=src}})}
+
+function startGame(){stopLoop();state.roundOver=false;state.score=0;state.paused=false;state.started=true;state.boostUntil=state.shieldUntil=state.magnetUntil=0;$('result').classList.add('hidden');$('overlay').classList.add('hidden');$('pauseBtn').textContent='إيقاف';$('powerReadout').textContent='التقط العناصر المضيئة للحصول على قدرات';$('touchControls').classList.toggle('show',state.mode==='open');$('gestureHint').textContent=state.mode==='open'?'اسحب يسار الشاشة للحركة · اسحب يمينها لتدوير الكاميرا':'اسحب الشاشة في اتجاه الحركة';updateHud();if(state.mode==='old'){initClassic();startLoop();return}startOpenGame()}
 
 async function startOpenGame(){
  toast('تحميل العالم ثلاثي الأبعاد…');if(!await loadThree()){state.paused=true;state.started=false;$('overlay').classList.remove('hidden');showStep(0);toast('تعذر تحميل محرك 3D. تحقق من اتصال الإنترنت.');return}
