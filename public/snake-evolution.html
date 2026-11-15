@@ -614,12 +614,26 @@ function createPlayer(){
  createTrailMesh();updateTrailMesh(performance.now());camera.position.set(0,5.7,10.5);
 }
 
+
+function createPreyModel(id){
+ const kind=foodKindForAnimal(id),g=new THREE.Group(),add=(geo,material,x,y,z,sx=1,sy=1,sz=1)=>{const o=new THREE.Mesh(geo,material);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=true;o.receiveShadow=true;g.add(o);return o},mc=(color,roughness=.7)=>new THREE.MeshStandardMaterial({color,roughness,emissive:color,emissiveIntensity:.08});
+ if(kind==='meat'){const red=mc(0xb9473d,.5),fat=mc(0xf1dfc6,.45);add(new THREE.SphereGeometry(.34,18,14),red,0,0,0,.95,.72,.8);add(new THREE.SphereGeometry(.25,16,12),red,.18,.12,.10,.8,.75,.72);const bone=add(new THREE.CylinderGeometry(.07,.07,.55,10),fat,.43,.02,.18,.9,1,1);bone.rotation.z=-.68;add(new THREE.SphereGeometry(.12,10,8),fat,.61,.20,.18,1.15,.75,.9);add(new THREE.SphereGeometry(.12,10,8),fat,.26,-.16,.18,1.1,.75,.9)}
+ else if(kind==='bamboo'){const green=mc(0x3f9b50,.48),light=mc(0x9bc96c,.55),leaf=mc(0x5baf58,.7);for(let i=0;i<2;i++){const x=(i-.5)*.22,stem=add(new THREE.CylinderGeometry(.075,.085,.92,9),green,x,.42,0);stem.rotation.z=(i-.5)*.12;for(const y of [.24,.56,.86]){const joint=add(new THREE.TorusGeometry(.078,.018,5,12),light,x,y,0);joint.rotation.x=Math.PI/2}const l=add(new THREE.ConeGeometry(.11,.55,7),leaf,x+.2,.84,-.03,.48,1,.28);l.rotation.z=-.85}}
+ else if(kind==='mouse'){const grey=mc(0x929b9e,.75),pink=mc(0xd88f92,.55),dark=mc(0x202a2b,.3);add(new THREE.SphereGeometry(.25,16,12),grey,0,.20,0,1.2,.75,1.65);for(const side of [-1,1]){add(new THREE.SphereGeometry(.105,12,10),pink,side*.17,.40,-.13);add(new THREE.SphereGeometry(.05,12,10),grey,side*.17,.41,-.13);add(new THREE.SphereGeometry(.035,10,8),dark,side*.12,.25,-.32)}const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,.17,.32),new THREE.Vector3(.10,.12,.55),new THREE.Vector3(.30,.16,.72)]);add(new THREE.TubeGeometry(curve,14,.025,6,false),pink,0,0,0)}
+ else if(kind==='fish'){const blue=mc(0x56a9c1,.38),fin=mc(0xe6a45d,.55);add(new THREE.SphereGeometry(.28,16,12),blue,0,.1,0,1.45,.65,.75);const tail=add(new THREE.ConeGeometry(.22,.45,5),fin,0,.1,.43);tail.rotation.x=Math.PI/2;for(const side of [-1,1])add(new THREE.SphereGeometry(.035,8,6),mc(0x151b1a,.3),side*.17,.19,-.22)}
+ else if(kind==='worm'){const pink=mc(0xd78b68,.65),curve=new THREE.CatmullRomCurve3([new THREE.Vector3(-.38,.08,0),new THREE.Vector3(-.2,.22,0),new THREE.Vector3(0,.1,0),new THREE.Vector3(.18,.25,0),new THREE.Vector3(.38,.12,0)]);add(new THREE.TubeGeometry(curve,28,.085,9,false),pink,0,0,0)}
+ else{const grain=mc(0xd9bb55,.7),straw=mc(0x9c8745,.8);for(let i=0;i<7;i++)add(new THREE.SphereGeometry(.09,8,6),grain,(i%3-.9)*.16,.08+Math.floor(i/3)*.10,(i%2-.5)*.18,.9,1.25,.85);add(new THREE.CylinderGeometry(.025,.025,.55,6),straw,0,.19,0)}
+ const halo=new THREE.Mesh(new THREE.TorusGeometry(.52,.035,7,28),new THREE.MeshBasicMaterial({color:0xf0d58e}));halo.rotation.x=Math.PI/2;halo.position.y=-.05;g.add(halo);g.scale.setScalar(.9);g.userData.foodKind=kind;return g;
+}
+function createPowerFood(type){const g=new THREE.Group(),colors={bonus:0xffd24f,speed:0x65baff,shield:0x75dce6,magnet:0xc28bf0},color=colors[type],material=new THREE.MeshStandardMaterial({color,roughness:.28,metalness:.15,emissive:color,emissiveIntensity:.38}),geo=type==='bonus'?new THREE.OctahedronGeometry(.38):type==='speed'?new THREE.TorusGeometry(.28,.1,9,18):type==='shield'?new THREE.IcosahedronGeometry(.34,1):new THREE.DodecahedronGeometry(.32,0);const token=new THREE.Mesh(geo,material);token.castShadow=true;g.add(token);const ring=new THREE.Mesh(new THREE.TorusGeometry(.52,.035,7,24),new THREE.MeshBasicMaterial({color:0xffffff}));ring.rotation.x=Math.PI/2;ring.position.y=-.1;g.add(ring);return g;}
+function obstacleDistance(o,x,z){if(o.halfX!=null&&o.halfZ!=null){const dx=Math.max(Math.abs(x-o.x)-o.halfX,0),dz=Math.max(Math.abs(z-o.z)-o.halfZ,0);return Math.hypot(dx,dz)}return Math.hypot(o.x-x,o.z-z)-(o.r||.65)}
+function collidesAt(x,z,pad=.72){return obstacles.some(o=>obstacleDistance(o,x,z)<pad)}
+
 function makeFood(){
- const roll=Math.random();let type='normal',color=0xe9c96e,geo=new THREE.SphereGeometry(.24,10,8);
- if(roll<.045){type='bonus';color=0xffd24f;geo=new THREE.OctahedronGeometry(.36)}else if(roll<.09){type='speed';color=0x65baff;geo=new THREE.TorusGeometry(.25,.09,8,14)}else if(roll<.135){type='shield';color=0x75dce6;geo=new THREE.IcosahedronGeometry(.3,1)}else if(roll<.17){type='magnet';color=0xc28bf0;geo=new THREE.DodecahedronGeometry(.29,0)}
- const m=new THREE.MeshStandardMaterial({color,roughness:.35,metalness:type==='bonus'?.2:0,emissive:type==='shield'?0x14505a:0,emissiveIntensity:.3});let x=0,z=0,valid=false;
- for(let tries=0;tries<60&&!valid;tries++){x=(Math.random()-.5)*88;z=(Math.random()-.5)*88;valid=Math.hypot(x-player.position.x,z-player.position.z)>5&&(!state.obstacles||!obstacles.some(o=>Math.hypot(o.x-x,o.z-z)<(o.r||.65)+2))}
- const f=mesh(geo,m,x,.55,z);f.userData={type,value:type==='bonus'?5:1,phase:Math.random()*6};foodItems.push(f);
+ const roll=Math.random();let type='normal';if(roll<.04)type='bonus';else if(roll<.08)type='speed';else if(roll<.12)type='shield';else if(roll<.16)type='magnet';
+ const f=type==='normal'?createPreyModel(skins[state.skin].id):createPowerFood(type);let x=0,z=0,valid=false;
+ for(let tries=0;tries<90&&!valid;tries++){x=(Math.random()-.5)*88;z=(Math.random()-.5)*88;valid=Math.hypot(x-player.position.x,z-player.position.z)>5&&(!state.obstacles||!collidesAt(x,z,1.1))&&foodItems.every(q=>Math.hypot(q.position.x-x,q.position.z-z)>2.2)}
+ f.position.set(x,.55,z);f.userData={...f.userData,type,value:type==='bonus'?5:1,phase:Math.random()*6};world.add(f);foodItems.push(f);
 }
 
 
@@ -649,16 +663,16 @@ function updateOpen(dt,t){
  if(inputLen>.10){const forwardX=-Math.sin(cameraYaw),forwardZ=-Math.cos(cameraYaw),rightX=Math.cos(cameraYaw),rightZ=-Math.sin(cameraYaw),vx=rightX*ix+forwardX*(-iy),vz=rightZ*ix+forwardZ*(-iy),target=Math.atan2(vx,-vz);let delta=Math.atan2(Math.sin(target-heading),Math.cos(target-heading));heading+=clamp(delta,-7.2*dt,7.2*dt)}
  const boost=state.boostUntil>now?1.65:1,speed=6.3*boost*inputLen,nextX=player.position.x+Math.sin(heading)*speed*dt,nextZ=player.position.z-Math.cos(heading)*speed*dt;
  if(Math.abs(nextX)>105||Math.abs(nextZ)>105){finishRound('وصلت إلى حافة العالم. ارجع إلى منطقة الاستكشاف.');return}
- if(state.obstacles&&state.shieldUntil<now){for(const o of obstacles){if(Math.hypot(o.x-nextX,o.z-nextZ)<(o.r||.65)+.52){finishRound('اصطدمت بعائق في العالم. اجمع الدرع أو غيّر مسارك.');return}}}
- player.position.x=nextX;player.position.z=nextZ;player.rotation.y=heading;path.unshift(player.position.clone());if(path.length>360)path.length=360;
+ let resolvedX=nextX,resolvedZ=nextZ;if(state.obstacles&&state.shieldUntil<now&&collidesAt(resolvedX,resolvedZ,.78)){const xFree=!collidesAt(resolvedX,player.position.z,.78),zFree=!collidesAt(player.position.x,resolvedZ,.78);if(xFree&&(!zFree||Math.abs(nextX-player.position.x)>=Math.abs(nextZ-player.position.z)))resolvedZ=player.position.z;else if(zFree)resolvedX=player.position.x;else{resolvedX=player.position.x;resolvedZ=player.position.z}}
+ player.position.x=resolvedX;player.position.z=resolvedZ;player.rotation.y=heading;path.unshift(player.position.clone());if(path.length>360)path.length=360;
  updateTrailMesh(t);
  const moving=inputLen>.1;animateCreature(t,moving);
  cameraYaw+=lookInput.x*dt*1.9;cameraPitch=clamp(cameraPitch-lookInput.y*dt*.85,.16,.78);
  const distance=9.6,camPos=new THREE.Vector3(player.position.x+Math.sin(cameraYaw)*distance,2.8+cameraPitch*5.1,player.position.z+Math.cos(cameraYaw)*distance);camera.position.lerp(camPos,1-Math.pow(.001,dt));camera.lookAt(player.position.x,player.position.y+1,player.position.z);
- for(let i=foodItems.length-1;i>=0;i--){const f=foodItems[i];f.rotation.y+=dt*1.6;f.position.y=.55+Math.sin(t*.003+f.userData.phase)*.12;let d=f.position.distanceTo(player.position);
+ for(let i=foodItems.length-1;i>=0;i--){const f=foodItems[i];f.rotation.y+=dt*1.6;f.position.y=.55+Math.sin(t*.003+f.userData.phase)*.12;let d=Math.hypot(f.position.x-player.position.x,f.position.z-player.position.z);
   if(state.magnetUntil>now&&d<13){f.position.lerp(player.position,.055);d=f.position.distanceTo(player.position)}
   if(d<1.25){const type=f.userData.type;state.score+=f.userData.value;state.coins+=f.userData.value;if(type==='speed'){state.boostUntil=now+6500;toast('التقطت السرعة — اندفاع مؤقت')}if(type==='shield'){state.shieldUntil=now+8000;toast('التقطت الدرع — حماية مؤقتة')}if(type==='magnet'){state.magnetUntil=now+10000;toast('التقطت المغناطيس — الطعام ينجذب إليك')}
-   world.remove(f);f.geometry.dispose();f.material.dispose();foodItems.splice(i,1);trailRingCount=Math.min(56,trailRingCount+2);rebuildTrailMesh();updateTrailMesh(t);updateHud()}
+   world.remove(f);f.traverse?.(part=>{if(part.geometry)part.geometry.dispose();if(part.material)part.material.dispose()});if(f.geometry)f.geometry.dispose();if(f.material)f.material.dispose();foodItems.splice(i,1);trailRingCount=Math.min(56,trailRingCount+2);rebuildTrailMesh();updateTrailMesh(t);updateHud()}
  }
  if(t-lastFood>1900&&foodItems.length<16){makeFood();lastFood=t}
  const active=[];if(state.boostUntil>now)active.push('سرعة '+Math.ceil((state.boostUntil-now)/1000)+'ث');if(state.shieldUntil>now)active.push('درع '+Math.ceil((state.shieldUntil-now)/1000)+'ث');if(state.magnetUntil>now)active.push('مغناطيس '+Math.ceil((state.magnetUntil-now)/1000)+'ث');$('powerReadout').textContent=active.length?active.join('  ·  '):'التقط العناصر المضيئة للحصول على قدرات';
