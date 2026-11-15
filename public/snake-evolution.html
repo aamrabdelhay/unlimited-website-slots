@@ -3200,8 +3200,46 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       for(let i=-8;i<=8;i++){const p=i*11;box(-96,.12,p,.30,.24,2,roots);box(96,.12,p,.30,.24,2,roots);box(p,.12,-96,2,.24,.30,roots);box(p,.12,96,2,.24,.30,roots)}
     }
   }
+  function biomeGroundTexture(id){
+    const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d"),base={
+      garden:"#567c4d",street:"#535b5a",station:"#737974",home:"#765c48",kitchen:"#b8b8ac",night:"#1b3a30"
+    }[id]||"#567c4d";
+    x.fillStyle=base;x.fillRect(0,0,256,256);
+    let seed=17;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+    if(id==="home"){
+      for(let y=0;y<256;y+=32){
+        x.fillStyle=y%64?"#866c56":"#6e523f";x.fillRect(0,y,256,31);
+        x.strokeStyle="#4d382c";x.lineWidth=2;x.beginPath();x.moveTo(0,y+31);x.lineTo(256,y+31);x.stroke();
+        const offset=(Math.floor(y/32)%2)*52;
+        for(let q=-1;q<4;q++){const px=q*104+offset;x.beginPath();x.moveTo(px,y);x.lineTo(px,y+31);x.stroke()}
+        x.globalAlpha=.18;x.strokeStyle="#d5b18a";for(let k=0;k<12;k++){const px=rnd()*256,py=y+rnd()*30;x.beginPath();x.moveTo(px,py);x.quadraticCurveTo(px+12,py-2,px+22,py+1);x.stroke()}x.globalAlpha=1;
+      }
+    }else if(id==="kitchen"){
+      x.fillStyle="#aaa99e";for(let y=0;y<256;y+=64)for(let px=0;px<256;px+=64){x.fillRect(px+1,y+1,62,62);x.strokeStyle="#888d85";x.lineWidth=2;x.strokeRect(px+1,y+1,62,62);x.fillStyle="#c9c8bd";x.fillRect(px+5,y+5,54,54)}
+    }else if(id==="station"){
+      x.fillStyle="#80847d";for(let y=0;y<256;y+=64)for(let px=0;px<256;px+=64){x.strokeStyle="#5e645f";x.lineWidth=2;x.strokeRect(px+1,y+1,62,62);x.fillStyle="#96988f";x.fillRect(px+5,y+5,54,54)}
+      x.globalAlpha=.24;for(let i=0;i<1500;i++){x.fillStyle=rnd()>.5?"#343c3c":"#d0c9b7";x.fillRect(rnd()*256,rnd()*256,1.4,1.4)}x.globalAlpha=1;
+    }else if(id==="street"){
+      x.globalAlpha=.25;for(let i=0;i<2400;i++){x.fillStyle=rnd()>.5?"#202829":"#c0c1b7";x.fillRect(rnd()*256,rnd()*256,1.5,1.5)}x.globalAlpha=1;
+      x.strokeStyle="#363d3d";x.lineWidth=2;x.beginPath();x.moveTo(20,12);x.lineTo(44,37);x.lineTo(39,58);x.moveTo(210,150);x.lineTo(183,167);x.lineTo(194,196);x.stroke();
+    }else{
+      const colors=id==="night"?["#274637","#344b36","#536347"]:["#486d42","#65814c","#78935a"];
+      for(let i=0;i<360;i++){x.fillStyle=colors[Math.floor(rnd()*colors.length)];x.globalAlpha=.12+rnd()*.25;const px=rnd()*256,py=rnd()*256,r=2+rnd()*9;x.beginPath();x.ellipse(px,py,r,r*.55,rnd()*3,0,Math.PI*2);x.fill()}
+      x.globalAlpha=.30;x.strokeStyle=id==="night"?"#162e26":"#78965d";for(let i=0;i<750;i++){const px=rnd()*256,py=rnd()*256;x.beginPath();x.moveTo(px,py);x.lineTo(px+(rnd()-.5)*4,py-2-rnd()*5);x.stroke()}x.globalAlpha=1;
+    }
+    // Fine grain keeps broad surfaces from reading as flat color blocks.
+    x.globalAlpha=.16;for(let i=0;i<5200;i++){const g=Math.floor(80+rnd()*130);x.fillStyle="rgb("+g+","+g+","+g+")";x.fillRect(rnd()*256,rnd()*256,1,1)}x.globalAlpha=1;
+    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(18,18);t.anisotropy=Math.min(8,renderer?.capabilities?.getMaxAnisotropy?.()||4);return t;
+  }
+  function applyBiomeGround(){
+    const tex=biomeGroundTexture(state.map);
+    for(const o of world.children){
+      if(o.geometry?.type!=="PlaneGeometry"||o.position.y>-.01||!o.material?.isMeshStandardMaterial)continue;
+      o.material.map=tex;o.material.color.setHex(0xffffff);o.material.roughness=state.map==="kitchen"?.68:.96;o.material.metalness=0;o.material.needsUpdate=true;
+    }
+  }
   const previousBuildEnvironment=buildEnvironment;
-  buildEnvironment=function(){previousBuildEnvironment();biomeBorder()};
+  buildEnvironment=function(){previousBuildEnvironment();biomeBorder();applyBiomeGround()};
 
   // Fireflies float gently through the woodland canopy.
   // The existing world animator already advances traffic, kitchen props, rat motion and fireflies.
@@ -3260,11 +3298,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   async function renderBiomePreview(id){
     if(!await loadThree())return null;
     try{
-      if(!thumbnailRenderer){
-        thumbnailRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:"low-power"});
-        thumbnailRenderer.shadowMap.enabled=true;thumbnailRenderer.shadowMap.type=THREE.PCFSoftShadowMap;
-        thumbnailRenderer.outputColorSpace=THREE.SRGBColorSpace;thumbnailRenderer.toneMapping=THREE.ACESFilmicToneMapping;
-      }
+      if(!thumbnailRenderer)thumbnailRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:"low-power"});
+      thumbnailRenderer.shadowMap.enabled=true;thumbnailRenderer.shadowMap.type=THREE.PCFSoftShadowMap;thumbnailRenderer.outputColorSpace=THREE.SRGBColorSpace;thumbnailRenderer.toneMapping=THREE.ACESFilmicToneMapping;thumbnailRenderer.toneMappingExposure=1.12;
       const W=720,H=360;thumbnailRenderer.setPixelRatio(1);thumbnailRenderer.setSize(W,H,false);
       const sc=new THREE.Scene(),sky={garden:0x94b9bc,street:0x9db4bb,station:0x9bb4b7,home:0x887967,kitchen:0x9eb5b0,night:0x142638}[id]||0x26372d;
       sc.background=new THREE.Color(sky);
@@ -3375,12 +3410,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   renderAnimalPreviewImage=async function(skin,landscape=false){
     if(!await loadThree())return null;
     try{
-      if(!thumbnailRenderer){
-        thumbnailRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:"low-power"});
-        thumbnailRenderer.shadowMap.enabled=true;thumbnailRenderer.shadowMap.type=THREE.PCFSoftShadowMap;
-        thumbnailRenderer.outputColorSpace=THREE.SRGBColorSpace;thumbnailRenderer.toneMapping=THREE.ACESFilmicToneMapping;
-        thumbnailRenderer.toneMappingExposure=1.15;
-      }
+      if(!thumbnailRenderer)thumbnailRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:"low-power"});
+      thumbnailRenderer.shadowMap.enabled=true;thumbnailRenderer.shadowMap.type=THREE.PCFSoftShadowMap;thumbnailRenderer.outputColorSpace=THREE.SRGBColorSpace;thumbnailRenderer.toneMapping=THREE.ACESFilmicToneMapping;thumbnailRenderer.toneMappingExposure=1.15;
       const W=landscape?720:640,H=landscape?330:420;
       thumbnailRenderer.setPixelRatio(1);thumbnailRenderer.setSize(W,H,false);
       const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,W/H,.1,80);
