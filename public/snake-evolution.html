@@ -3593,7 +3593,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 })();
 
 
-/* WILD TRAILS MULTIPLAYER V1 */
+/* WILD TRAILS MULTIPLAYER V2 — TWO PLAYER READY LOBBY */
 (function wildTrailsMultiplayer(){
  const MP_URL="wss://snake-evolution-mp.aamrabdelhay.workers.dev";
  const css=`
@@ -3604,101 +3604,111 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  #mpPanel .mp-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
  #mpPanel .mp-mode{border:1px solid #64745e;background:#1b2b20;border-radius:13px;padding:12px 7px;text-align:center;color:#eee8d9;min-height:84px}
  #mpPanel .mp-mode b{display:block;font-size:15px;margin-bottom:5px}#mpPanel .mp-mode small{font-size:11px;color:#bdc4b5;line-height:1.4}
- #mpPanel .mp-mode.active{border-color:#e2bd6e;background:#455338;box-shadow:inset 0 0 0 1px #e2bd6e}
+ #mpPanel .mp-mode.active{border-color:#e2bd6e;background:#455338}
  #mpPanel label{display:block;font-size:12px;color:#d4c9a9;margin:12px 0 6px}
  #mpPanel input,#mpPanel select{width:100%;padding:12px;border:1px solid #65735e;background:#101b14;color:#fff;border-radius:11px;outline:none}
  #mpPanel .mp-actions{display:flex;gap:9px;margin-top:16px}#mpPanel button{cursor:pointer;font:inherit}
  #mpPanel .mp-primary{flex:1;background:#d8b36b;color:#1b2118;border:0;border-radius:12px;padding:13px;font-weight:900}
  #mpPanel .mp-secondary{background:#344632;color:#eee;border:1px solid #64745e;border-radius:12px;padding:12px}
+ #mpPanel .mp-slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+ #mpPanel .mp-slot{min-height:90px;border:1px dashed #899174;background:#17271c;border-radius:14px;padding:12px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px}
+ #mpPanel .mp-slot strong{font-size:15px}#mpPanel .mp-slot small{color:#c7cdbd;font-size:11px}
+ #mpPanel .mp-slot.ready{border-style:solid;border-color:#d8b36b;background:#34432a}
+ #mpPanel .mp-bigcount{font-size:48px;font-weight:1000;text-align:center;color:#f3ce7b;line-height:1.2;margin:12px}
  #mpHud{position:fixed;z-index:80;top:12px;left:12px;width:min(255px,48vw);background:#102017df;border:1px solid #c9a75e;border-radius:13px;padding:9px 11px;color:#f6f0dd;display:none;backdrop-filter:blur(8px);pointer-events:none}
- #mpHud .mp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:900}
- #mpHud .mp-status{font-size:10px;color:#c8d0bd;margin:3px 0 7px}
- #mpHud .mp-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;border-top:1px solid #ffffff18}
- #mpHud .mp-row.me{color:#f1cc79;font-weight:900}
+ #mpHud .mp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:900}#mpHud .mp-status{font-size:10px;color:#c8d0bd;margin:3px 0 7px}#mpHud .mp-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;border-top:1px solid #ffffff18}#mpHud .mp-row.me{color:#f1cc79;font-weight:900}
  @media(max-width:560px){#mpPanel .mp-card{padding:16px}#mpPanel .mp-modes{gap:5px}#mpPanel .mp-mode{padding:9px 3px}#mpPanel .mp-mode b{font-size:12px}#mpPanel .mp-mode small{font-size:9px}#mpOpen{top:8px;left:8px;padding:8px 10px;font-size:12px}}
  `;
  const style=document.createElement("style");style.textContent=css;document.head.appendChild(style);
  const openBtn=document.createElement("button");openBtn.id="mpOpen";openBtn.textContent="⚔️ Multiplayer";const head=document.querySelector("#overlay .modal-head");if(head){head.style.position="relative";head.appendChild(openBtn)}
  const panel=document.createElement("div");panel.id="mpPanel";panel.innerHTML=`
  <div class="mp-card" dir="rtl">
-  <div class="eyebrow">WILD TRAILS · ONLINE ARENA</div><h2>اللعب الجماعي</h2>
-  <p>العب مع أصحابك في نفس الخريطة. اختار التحدي وشارك كود الغرفة مع باقي اللاعبين.</p>
-  <div class="mp-modes">
-   <button class="mp-mode active" data-mode="race"><b>🏁 سباق</b><small>لف 3 دورات وكن الأول</small></button>
-   <button class="mp-mode" data-mode="battle"><b>🐍 مين ياكل التاني</b><small>اهزم المنافسين وتجنب ذيولهم</small></button>
-   <button class="mp-mode" data-mode="collect"><b>💎 تجميع نقاط</b><small>اجمع أكبر عدد من النقاط</small></button>
+ <div class="eyebrow">WILD TRAILS · ONLINE ARENA</div><h2>غرفة اللعب الجماعي</h2>
+ <p id="mpIntro">اختاروا نفس المود والخريطة. أول لاعب ينشئ الغرفة والثاني يدخل بنفس الكود.</p>
+ <div id="mpSetup">
+ <div class="mp-modes">
+ <button class="mp-mode active" data-mode="race"><b>🏁 سباق</b><small>لف 3 دورات وكن الأول</small></button>
+ <button class="mp-mode" data-mode="battle"><b>🐍 مين ياكل التاني</b><small>اهزم منافسك</small></button>
+ <button class="mp-mode" data-mode="collect"><b>💎 تجميع نقاط</b><small>اجمع نقاط أكتر</small></button>
+ </div>
+ <label>اسم اللاعب</label><input id="mpName" maxlength="18" placeholder="اسمك">
+ <label>كود الغرفة</label><input id="mpRoom" maxlength="8" placeholder="اكتب كود صاحبك أو اتركه لإنشاء غرفة" dir="ltr" style="text-align:center;letter-spacing:3px;text-transform:uppercase">
+ <label>الخريطة</label><select id="mpMap"><option value="garden">الحديقة</option><option value="street">الشارع</option><option value="station">محطة القطار</option><option value="home">البيت</option><option value="kitchen">المطبخ</option><option value="night">الغابة الليلية</option></select>
+ <div class="mp-actions"><button class="mp-primary" id="mpJoin">دخول / إنشاء غرفة</button><button class="mp-secondary" id="mpClose">رجوع</button></div>
+ </div>
+ <div id="mpLobby" style="display:none">
+  <div style="text-align:center;color:#e8c778;font-weight:900">كود الغرفة</div>
+  <div id="mpCode" style="font-size:26px;font-weight:1000;letter-spacing:5px;text-align:center;direction:ltr;margin:4px 0 10px"></div>
+  <div class="mp-slots">
+   <div class="mp-slot" id="mpSlot1"><strong>الخانة 1</strong><small>في انتظار اللاعب الأول</small></div>
+   <div class="mp-slot" id="mpSlot2"><strong>الخانة 2</strong><small>في انتظار اللاعب الثاني</small></div>
   </div>
-  <label>اسم اللاعب</label><input id="mpName" maxlength="18" placeholder="اكتب اسمك" value="لاعب">
-  <label>كود الغرفة (نفس الكود لكل اللاعبين)</label><input id="mpRoom" maxlength="8" placeholder="مثال: WILD24" dir="ltr" style="text-align:center;letter-spacing:3px;text-transform:uppercase">
-  <label>الخريطة</label><select id="mpMap"><option value="garden">الحديقة</option><option value="street">الشارع</option><option value="station">محطة القطار</option><option value="home">البيت</option><option value="kitchen">المطبخ</option><option value="night">الغابة الليلية</option></select>
-  <div class="mp-actions"><button class="mp-primary" id="mpJoin">إنشاء / دخول الغرفة</button><button class="mp-secondary" id="mpClose">رجوع</button></div>
-  <p id="mpHint" style="margin:12px 0 0;font-size:11px">أنشئ كودًا جديدًا وابعته لأصحابك، أو اكتب كود غرفة موجودة.</p>
+  <div id="mpCountdown" class="mp-bigcount" style="display:none"></div>
+  <p id="mpLobbyHint" style="text-align:center">في انتظار دخول اللاعب الثاني…</p>
+  <div class="mp-actions"><button class="mp-primary" id="mpReady" disabled>أنا جاهز</button><button class="mp-secondary" id="mpLeave">مغادرة الغرفة</button></div>
+ </div>
+ <p id="mpHint" style="margin:12px 0 0;font-size:11px">لا تبدأ الجولة إلا بعد دخول لاعبين والضغط على «أنا جاهز» من الاثنين.</p>
  </div>`;
  document.body.appendChild(panel);
- const hud=document.createElement("div");hud.id="mpHud";hud.innerHTML='<div class="mp-top"><span>🌐 ONLINE ARENA</span><span id="mpRoomLabel"></span></div><div class="mp-status" id="mpStatus">جارٍ الاتصال…</div><div id="mpBoard"></div>';document.body.appendChild(hud);
- let chosen="race",room="",socket=null,myId="",lastSent=0,players=new Map(),remoteObjects=new Map(),mpActive=false,mpDead=false,mpLap=0,mpCheckpoint=0,sendTimer=0;
+ const hud=document.createElement("div");hud.id="mpHud";hud.innerHTML='<div class="mp-top"><span>🌐 ONLINE ARENA</span><span id="mpRoomLabel"></span></div><div class="mp-status" id="mpStatus">متصل</div><div id="mpBoard"></div>';document.body.appendChild(hud);
+ let chosen="race",room="",socket=null,myId="",lastSent=0,players=new Map(),remoteObjects=new Map(),mpActive=false,mpDead=false,countdownTimer=null,startTimer=null,hasStarted=false;
  const modeNames={race:"سباق",battle:"مين ياكل التاني",collect:"تجميع نقاط"};
  const randomRoom=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),v=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[v%32]).join("");
- const setHint=t=>{const el=document.getElementById("mpHint");if(el)el.textContent=t};
- openBtn.addEventListener("click",()=>{document.getElementById("mpRoom").value=randomRoom();document.getElementById("mpName").value=localStorage.getItem("wild-mp-name")||"لاعب";document.getElementById("mpMap").value=state.map||"garden";panel.classList.add("show")});
- document.getElementById("mpClose").onclick=()=>panel.classList.remove("show");
+ const $mp=id=>document.getElementById(id);
+ function closeSocket(){if(socket){try{socket.onclose=null;socket.close()}catch{}socket=null}}
+ function clearRemote(){for(const o of remoteObjects.values()){if(world)world.remove(o.group)}remoteObjects.clear()}
+ function resetRoom(){mpActive=false;hasStarted=false;mpDead=false;clearInterval(countdownTimer);clearTimeout(startTimer);closeSocket();clearRemote();players.clear();hud.style.display="none"}
+ function showSetup(){resetRoom();$mp("mpSetup").style.display="block";$mp("mpLobby").style.display="none";panel.classList.add("show")}
+ openBtn.addEventListener("click",()=>{$mp("mpRoom").value="";$mp("mpName").value=localStorage.getItem("wild-mp-name")||"لاعب";$mp("mpMap").value=state.map||"garden";chosen="race";panel.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===chosen));showSetup()});
+ $mp("mpClose").onclick=()=>{panel.classList.remove("show");resetRoom()};
  panel.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{chosen=b.dataset.mode;panel.querySelectorAll("[data-mode]").forEach(x=>x.classList.toggle("active",x===b))});
- function cleanup(){
-  if(socket){try{socket.onclose=null;socket.close()}catch{}socket=null}
-  for(const obj of remoteObjects.values()){world?.remove(obj.group);obj.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose()}})}
-  remoteObjects.clear();players.clear();myId="";mpActive=false;mpDead=false;hud.style.display="none";clearInterval(sendTimer);
- }
- function connect(){
-  cleanup();room=document.getElementById("mpRoom").value.trim().toUpperCase();if(!/^[A-Z0-9]{4,8}$/.test(room)){setHint("الكود لازم يكون من 4 إلى 8 حروف أو أرقام.");return}
-  const name=(document.getElementById("mpName").value.trim()||"لاعب").slice(0,18);localStorage.setItem("wild-mp-name",name);
-  state.map=document.getElementById("mpMap").value;state.mode="open";state.obstacles=true;
-  panel.classList.remove("show");mpActive=true;mpDead=false;mpLap=0;mpCheckpoint=0;
-  const url=MP_URL+"/room/"+room+"/ws?name="+encodeURIComponent(name)+"&mode="+chosen+"&skin="+state.skin;
-  try{socket=new WebSocket(url)}catch(e){mpActive=false;toast("تعذر إنشاء اتصال اللعب الجماعي");return}
-  hud.style.display="block";document.getElementById("mpRoomLabel").textContent=room;document.getElementById("mpStatus").textContent="جارٍ الاتصال بالغرفة…";
-  socket.onopen=()=>{document.getElementById("mpStatus").textContent="متصل · "+modeNames[chosen];toast("دخلت الغرفة "+room)};
-  socket.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch{return}
-   if(d.type==="welcome"){myId=d.id;return}
-   if(d.type==="system"){document.getElementById("mpStatus").textContent=d.text;return}
-   if(d.type==="kill"){if(d.victim===myId&&!mpDead){mpDead=true;setTimeout(()=>finishRound("اتاكلت! انتهت جولتك في ساحة البقاء."),350)}return}
-   if(d.type==="state"){const list=d.players||[];players=new Map(list.map(p=>[p.id,p]));const me=players.get(myId);if(me){mpLap=me.lap||0;mpCheckpoint=me.checkpoint||0;if(chosen==="race"&&mpLap>=3&&!state.roundOver)finishRound("فزت بالسباق! أكملت 3 دورات.");if(chosen==="battle"&&me.alive===false&&!mpDead){mpDead=true;finishRound("انتهت جولتك. حاول تفادي ذيول المنافسين.")}}
-    updateBoard(list);if(world)syncRemotePlayers(list);
-   }
-  };
-  socket.onerror=()=>{document.getElementById("mpStatus").textContent="مشكلة في الاتصال — تأكد من اتصال الإنترنت"};
-  socket.onclose=()=>{if(mpActive){document.getElementById("mpStatus").textContent="انقطع الاتصال بالغرفة";toast("انقطع اتصال اللعب الجماعي")}};
-  const oldStart=window.__wtMpStart;
-  window.__wtMpStart=true;
- }
- function updateBoard(list){
-  const board=document.getElementById("mpBoard");const ordered=[...list].sort((a,b)=>chosen==="race"?((b.lap*4+b.checkpoint)-(a.lap*4+a.checkpoint)):b.score-a.score);
-  board.innerHTML=ordered.slice(0,6).map((p,i)=>'<div class="mp-row '+(p.id===myId?'me':'')+'"><span>'+(i+1)+'. '+escapeHtml(p.name)+(p.alive===false?' 💀':'')+'</span><span>'+(chosen==="race"?(p.lap||0)+' دورات':(p.score||0)+' نقطة')+'</span></div>').join("");
+ function setLobbyHint(t){$mp("mpLobbyHint").textContent=t}
+ function drawLobby(d){
+  players=new Map((d.players||[]).map(p=>[p.id,p]));
+  const arr=[...(d.players||[])].sort((a,b)=>a.slot-b.slot);
+  for(let i=0;i<2;i++){const p=arr[i],slot=$mp("mpSlot"+(i+1));slot.classList.toggle("ready",!!p?.ready);slot.innerHTML=p?'<strong>'+escapeHtml(p.name)+(p.id===myId?' (أنت)':'')+'</strong><small>'+(p.ready?'✅ جاهز':'⏳ لم يستعد بعد')+'</small>':'<strong>الخانة '+(i+1)+'</strong><small>في انتظار اللاعب…</small>'}
+  $mp("mpCode").textContent=room;
+  const ready=$mp("mpReady"),me=arr.find(p=>p.id===myId),both=arr.length===2;
+  ready.disabled=!both||d.phase!=="lobby";ready.textContent=me?.ready?"إلغاء الاستعداد":"أنا جاهز";
+  if(d.phase==="countdown"){setLobbyHint("اللاعبان جاهزان! المباراة ستبدأ بعد قليل…");$mp("mpCountdown").style.display="block"}
+  else{$mp("mpCountdown").style.display="none";setLobbyHint(!both?"في انتظار دخول اللاعب الثاني…":arr.every(p=>p.ready)?"تجهيز بدء المباراة…":"كل لاعب يضغط «أنا جاهز» لبدء العد التنازلي")}
+  $mp("mpIntro").textContent="المود: "+modeNames[d.mode||chosen]+" · الخريطة: "+(d.map||state.map)+" — لا تبدأ الجولة إلا عند جاهزية الاثنين.";
  }
  function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+ function enterRoom(){
+  const typed=$mp("mpRoom").value.trim().toUpperCase();room=typed||randomRoom();$mp("mpRoom").value=room;
+  const name=($mp("mpName").value.trim()||"لاعب").slice(0,18);localStorage.setItem("wild-mp-name",name);
+  const map=$mp("mpMap").value;
+  const url=MP_URL+"/room/"+room+"/ws?name="+encodeURIComponent(name)+"&mode="+chosen+"&map="+map+"&skin="+state.skin;
+  try{socket=new WebSocket(url)}catch(e){toast("تعذر الاتصال بسيرفر اللعب الجماعي");return}
+  mpActive=true;hasStarted=false;$mp("mpSetup").style.display="none";$mp("mpLobby").style.display="block";panel.classList.add("show");$mp("mpCode").textContent=room;setLobbyHint("جارٍ الاتصال بالغرفة…");
+  socket.onopen=()=>{hud.style.display="block";$mp("mpRoomLabel").textContent=room;$mp("mpStatus").textContent="في انتظار اللاعبين";};
+  socket.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch{return}
+   if(d.type==="welcome"){myId=d.id;return}
+   if(d.type==="lobby"){drawLobby(d);return}
+   if(d.type==="system"){$mp("mpStatus").textContent=d.text;return}
+   if(d.type==="start"){hasStarted=true;clearInterval(countdownTimer);$mp("mpCountdown").style.display="block";$mp("mpReady").disabled=true;const tick=()=>{const n=Math.max(0,Math.ceil((d.startAt-Date.now())/1000));$mp("mpCountdown").textContent=n>0?n:"انطلق!";};tick();countdownTimer=setInterval(tick,100);clearTimeout(startTimer);startTimer=setTimeout(()=>{panel.classList.remove("show");$mp("result").classList.add("hidden");state.mode="open";state.map=d.map||map;state.score=0;state.roundOver=false;state.paused=false;startGame();$mp("mpStatus").textContent="المباراة بدأت · "+modeNames[d.mode];},Math.max(0,d.startAt-Date.now()));return}
+   if(d.type==="kill"){if(d.victim===myId&&!mpDead){mpDead=true;finishRound("اتاكلت! انتهت جولتك في ساحة البقاء.")}return}
+   if(d.type==="state"){const list=d.players||[];players=new Map(list.map(p=>[p.id,p]));const me=players.get(myId);if(me&&chosen==="race"&&me.lap>=3&&!state.roundOver)finishRound("فزت بالسباق! أكملت 3 دورات.");updateBoard(list);if(world)syncRemotePlayers(list)}
+  };
+  socket.onerror=()=>{setLobbyHint("تعذر الاتصال. حاول مرة أخرى.");$mp("mpStatus").textContent="خطأ اتصال"};
+  socket.onclose=()=>{if(mpActive&&!hasStarted){setLobbyHint("انقطع الاتصال بالغرفة.");$mp("mpReady").disabled=true}if(mpActive)$mp("mpStatus").textContent="انقطع الاتصال"};
+ }
+ $mp("mpJoin").onclick=enterRoom;
+ $mp("mpReady").onclick=()=>{if(socket?.readyState===WebSocket.OPEN&&!hasStarted){const me=players.get(myId);socket.send(JSON.stringify({type:"ready",ready:!me?.ready}))}};
+ $mp("mpLeave").onclick=()=>{resetRoom();panel.classList.remove("show");toast("غادرت الغرفة")};
+ function updateBoard(list){const board=$mp("mpBoard"),ordered=[...list].sort((a,b)=>chosen==="race"?((b.lap*4+b.checkpoint)-(a.lap*4+a.checkpoint)):b.score-a.score);board.innerHTML=ordered.map((p,i)=>'<div class="mp-row '+(p.id===myId?'me':'')+'"><span>'+(i+1)+'. '+escapeHtml(p.name)+(p.alive===false?' 💀':'')+'</span><span>'+(chosen==="race"?(p.lap||0)+' دورات':(p.score||0)+' نقطة')+'</span></div>').join("")}
  function syncRemotePlayers(list){
-  for(const p of list){if(p.id===myId)continue;let o=remoteObjects.get(p.id);
-   if(!o){const group=new THREE.Group(),skin=skins[Math.max(0,Math.min(skins.length-1,p.skin||0))],head=createAnimal(skin);group.add(head);const tail=[];for(let i=0;i<10;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*(1-i*.055),10,8),new THREE.MeshStandardMaterial({color:skin.color,roughness:.72}));group.add(m);tail.push(m)}world.add(group);o={group,head,tail,x:p.x||0,z:p.z||0,heading:p.heading||0};remoteObjects.set(p.id,o)}
-   o.x+=(p.x-o.x)*.48;o.z+=(p.z-o.z)*.48;o.heading=p.heading||0;o.group.position.set(o.x,0,o.z);o.head.rotation.y=o.heading;
-   const trail=p.trail||[];for(let i=0;i<o.tail.length;i++){const q=trail[Math.min(trail.length-1,Math.max(0,(i+1)*4))];if(q)o.tail[i].position.set(q.x,.30,q.z);else o.tail[i].position.set(o.x-Math.sin(o.heading)*((i+1)*.34),.3,o.z+Math.cos(o.heading)*((i+1)*.34))}
-   o.group.visible=p.alive!==false;
+  for(const p of list){if(p.id===myId)continue;let o=remoteObjects.get(p.id);if(!o){const group=new THREE.Group(),skin=skins[Math.max(0,Math.min(skins.length-1,p.skin||0))],head=createAnimal(skin);group.add(head);const tail=[];for(let i=0;i<10;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*(1-i*.055),10,8),new THREE.MeshStandardMaterial({color:skin.color,roughness:.72}));group.add(m);tail.push(m)}world.add(group);o={group,head,tail,x:p.x||0,z:p.z||0};remoteObjects.set(p.id,o)}
+   o.x+=(p.x-o.x)*.48;o.z+=(p.z-o.z)*.48;o.group.position.set(o.x,0,o.z);o.head.rotation.y=p.heading||0;const trail=p.trail||[];for(let i=0;i<o.tail.length;i++){const q=trail[Math.min(trail.length-1,(i+1)*4)];if(q)o.tail[i].position.set(q.x,.3,q.z);else o.tail[i].position.set(o.x,.3+i*.0,o.z)}o.group.visible=p.alive!==false;
   }
-  for(const [id,o] of remoteObjects){if(!players.has(id)){world.remove(o.group);remoteObjects.delete(id)}}
+  for(const [id,o] of remoteObjects)if(!players.has(id)){world.remove(o.group);remoteObjects.delete(id)}
  }
- function sendUpdate(){
-  if(!mpActive||!socket||socket.readyState!==WebSocket.OPEN||!player||!world||state.roundOver)return;
-  const trail=(path||[]).filter((_,i)=>i%6===0).slice(0,55).map(v=>({x:v.x,z:v.z}));
-  try{socket.send(JSON.stringify({type:"update",x:player.position.x,z:player.position.z,heading,score:state.score,alive:!mpDead,trail}))}catch{}
- }
- const oldUpdateOpen=updateOpen;
- updateOpen=function(dt,t){oldUpdateOpen(dt,t);if(!mpActive)return;const now=performance.now();if(now-lastSent>90){lastSent=now;sendUpdate()}};
- const oldStartOpenGame=startOpenGame;
- startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&player&&world){remoteObjects.clear();syncRemotePlayers([...players.values()]);lastSent=0;sendUpdate()}};
- const oldFinishRound=finishRound;
- finishRound=function(reason){if(mpActive){sendUpdate();document.getElementById("mpStatus").textContent="انتهت الجولة"}oldFinishRound(reason)};
- document.getElementById("mpJoin").onclick=()=>{const r=document.getElementById("mpRoom").value.trim();if(!r)document.getElementById("mpRoom").value=randomRoom();connect();if(mpActive){state.mode="open";state.score=0;startGame()}};
+ function sendUpdate(){if(!mpActive||!hasStarted||!socket||socket.readyState!==WebSocket.OPEN||!player||!world||state.roundOver)return;const trail=(path||[]).filter((_,i)=>i%6===0).slice(0,55).map(v=>({x:v.x,z:v.z}));try{socket.send(JSON.stringify({type:"update",x:player.position.x,z:player.position.z,heading,score:state.score,alive:!mpDead,trail}))}catch{}}
+ let lastSent=0;const oldUpdateOpen=updateOpen;updateOpen=function(dt,t){oldUpdateOpen(dt,t);if(!mpActive||!hasStarted)return;const now=performance.now();if(now-lastSent>90){lastSent=now;sendUpdate()}};
+ const oldStartOpenGame=startOpenGame;startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&hasStarted&&player&&world){clearRemote();syncRemotePlayers([...players.values()]);lastSent=0;sendUpdate()}};
+ const oldFinishRound=finishRound;finishRound=function(reason){if(mpActive&&hasStarted){sendUpdate();$mp("mpStatus").textContent="انتهت الجولة"}oldFinishRound(reason)};
  window.addEventListener("beforeunload",()=>{if(socket)try{socket.close()}catch{}});
-})();
-
-</script>
+})();</script>
 </body>
 </html>
