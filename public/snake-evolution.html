@@ -1188,6 +1188,41 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     }
   }
 
+  // Species-specific gait: diagonal quadruped steps, bird wing beats and aquatic tail sway.
+  const previousCreatureAnimation=animateCreature;
+  let previousCreatureYaw=0;
+  animateCreature=function(t,moving){
+    previousCreatureAnimation(t,moving);
+    if(!creatureHead)return;
+    const id=creatureHead.userData.kind||skins[state.skin]?.id||'snake';
+    const rig=creatureHead.userData.rig;
+    if(rig?.limbs?.length){
+      const cycle=t*(.012+Math.min(.009,state.score*.00012));
+      const stride=moving?.48:.025;
+      // Limb order is front-left, rear-left, front-right, rear-right.
+      const diagonal=[0,Math.PI,Math.PI,0];
+      rig.limbs.forEach((leg,i)=>{
+        leg.rotation.x=Math.sin(cycle+diagonal[i%4])*(moving?.42:.025);
+        leg.rotation.z=(i<2?-1:1)*(moving?.045:.008);
+      });
+    }
+    if(rig?.wings?.length){
+      const flap=moving?Math.sin(t*.026)*.34:Math.sin(t*.004)*.025;
+      rig.wings.forEach(wing=>{wing.group.rotation.z=wing.side*(.08+flap)});
+    }
+    if(id==='snake'||id==='worm'){
+      creatureHead.rotation.z=Math.sin(t*.007)* (moving?.065:.022);
+      creatureHead.rotation.x=Math.sin(t*.004)*.018;
+    }else if(id==='fish'){
+      creatureHead.rotation.y=Math.sin(t*.014)*(moving?.16:.05);
+      creatureHead.rotation.z=Math.sin(t*.009)*.025;
+    }else if(id==='deer'){
+      creatureHead.rotation.x=Math.sin(t*.012)*(moving?.035:.012);
+    }else if(id==='lion'||id==='panda'||id==='cat'||id==='croc'){
+      creatureHead.rotation.x=Math.sin(t*.010)*(moving?.025:.009);
+    }
+  };
+
   // The camera is now controlled by one natural drag anywhere on the world;
   // movement stays on its dedicated configurable stick.
   let cameraDrag=null;
@@ -1247,7 +1282,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     const elevatedY=stationTrainHeightAt(nextX,nextZ);
     const onTrainRoute=stationTrainRouteAt(nextX,nextZ);
     let resolvedX=nextX,resolvedZ=nextZ;
-    if(!phased&&!onTrainRoute&&collidesAt(resolvedX,resolvedZ,.78)){
+    if(state.obstacles&&!phased&&!onTrainRoute&&collidesAt(resolvedX,resolvedZ,.78)){
       const xFree=!collidesAt(resolvedX,player.position.z,.78);
       const zFree=!collidesAt(player.position.x,resolvedZ,.78);
       if(xFree&&(!zFree||Math.abs(nextX-player.position.x)>=Math.abs(nextZ-player.position.z)))resolvedZ=player.position.z;
