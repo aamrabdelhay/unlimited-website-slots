@@ -152,172 +152,6 @@
 }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
-
-/* WT HOME SAFE SPAWN + WALL REBOUND V1 */
-(function wtHomeSafeSpawnAndWallRebound(){
-  const previousCreatePlayer = createPlayer;
-  createPlayer = function(){
-    previousCreatePlayer();
-    if(!player || !world || (state.map!=="home" && state.map!=="kitchen")) return;
-
-    const preferred = state.map==="home" ? {x:0,z:19} : {x:8,z:19};
-    const clearSpawn = (x,z) => {
-      if(x < -27 || x > 27 || z < -23 || z > 23 || collidesAt(x,z,1.12)) return false;
-      // Check both the first few movement steps and the space occupied by the tail.
-      for(const distance of [1.25,2.5,3.75,5]){
-        if(collidesAt(x,z-distance,1.02) || collidesAt(x,z+distance,1.02)) return false;
-      }
-      return true;
-    };
-
-    let spawn = null;
-    if(clearSpawn(preferred.x,preferred.z)) spawn = preferred;
-    else {
-      const choices = [];
-      for(let x=-27;x<=27;x+=1.5){
-        for(let z=-23;z<=23;z+=1.5){
-          if(!clearSpawn(x,z)) continue;
-          const distance=Math.hypot(x-preferred.x,z-preferred.z);
-          choices.push({x,z,distance});
-        }
-      }
-      choices.sort((a,b)=>a.distance-b.distance);
-      spawn = choices[0] || (clearSpawn(0,0)?{x:0,z:0}:null);
-    }
-
-    if(spawn){
-      player.position.set(spawn.x,0,spawn.z);
-      heading=0;
-      player.rotation.set(0,0,0);
-      path.length=0;
-      for(let i=0;i<360;i++) path.push(new THREE.Vector3(spawn.x,0,spawn.z+i*.12));
-      updateTrailMesh(performance.now());
-      if(camera){
-        camera.position.set(spawn.x,5.2,spawn.z+10.4);
-        camera.lookAt(spawn.x,1,spawn.z);
-      }
-    }
-    state.wallFreezeUntil=0;
-    state.wallHitLockUntil=0;
-    state.wallReboundLockUntil=0;
-    state.wallRebound=null;
-    state.wallDizzyUntil=0;
-    toast("بداية آمنة — ابتعدنا عن الأثاث والعوائق");
-  };
-
-  const previousUpdateOpen = updateOpen;
-  const boundsForMap = () => {
-    if(state.map==="home" || state.map==="kitchen") return {minX:-31.2,maxX:31.2,minZ:-26.2,maxZ:26.2};
-    if(state.map==="station") return {minX:-21,maxX:21,minZ:-90,maxZ:90};
-    return {minX:-94,maxX:94,minZ:-94,maxZ:94};
-  };
-  const removeImpactRing = () => {
-    const fx=state.wallImpactFx;
-    if(!fx) return;
-    try{
-      world?.remove(fx.ring);
-      fx.ring.geometry?.dispose();
-      fx.ring.material?.dispose();
-    }catch{}
-    state.wallImpactFx=null;
-  };
-  const showImpactRing = () => {
-    if(!world || !player) return;
-    removeImpactRing();
-    const ring=new THREE.Mesh(
-      new THREE.TorusGeometry(.62,.065,9,32),
-      new THREE.MeshBasicMaterial({color:0xf0c878,transparent:true,opacity:.9,depthWrite:false})
-    );
-    ring.rotation.x=-Math.PI/2;
-    ring.position.set(player.position.x,.16,player.position.z);
-    world.add(ring);
-    state.wallImpactFx={ring,start:performance.now()};
-  };
-
-  updateOpen = function(dt,t){
-    if(!player || !world){ previousUpdateOpen(dt,t); return; }
-
-    const before={x:player.position.x,z:player.position.z};
-    const previousLock=Number(state.wallHitLockUntil)||0;
-    previousUpdateOpen(dt,t);
-
-    const now=Date.now();
-    const newLock=Number(state.wallHitLockUntil)||0;
-    const obstacleImpact=newLock>previousLock && newLock>now;
-    const bounds=boundsForMap();
-    const movingInput =
-      Math.hypot(Number(moveInput?.x)||0,Number(moveInput?.y)||0)>.12 ||
-      !!(keys.ArrowLeft||keys.ArrowRight||keys.ArrowUp||keys.ArrowDown||keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD);
-    const dirX=Math.sin(heading),dirZ=-Math.cos(heading);
-    const boundaryImpact=movingInput && now>=previousLock && (
-      (Math.max(before.x,player.position.x)>=bounds.maxX-.18 && dirX>.25) ||
-      (Math.min(before.x,player.position.x)<=bounds.minX+.18 && dirX<-.25) ||
-      (Math.max(before.z,player.position.z)>=bounds.maxZ-.18 && dirZ>.25) ||
-      (Math.min(before.z,player.position.z)<=bounds.minZ+.18 && dirZ<-.25)
-    );
-
-    if((obstacleImpact || boundaryImpact) && now>=(state.wallReboundLockUntil||0)){
-      const duration=520;
-      state.wallRebound={
-        vx:-Math.sin(heading)*11.5,
-        vz:Math.cos(heading)*11.5,
-        start:now,
-        until:now+duration,
-        duration
-      };
-      state.wallFreezeUntil=now+440;
-      state.wallHitLockUntil=now+1250;
-      state.wallReboundLockUntil=now+1250;
-      state.wallDizzyStart=performance.now();
-      state.wallDizzyUntil=now+1450;
-      // Brief impact protection prevents the knock-back from counting as a self-hit.
-      state.phaseUntil=Math.max(Number(state.phaseUntil)||0,now+680);
-      state.shieldUntil=Math.max(Number(state.shieldUntil)||0,now+680);
-      showImpactRing();
-      toast("ارتداد! اتدفعت بعيد عن الحائط ودوخت للحظة");
-    }
-
-    const rebound=state.wallRebound;
-    if(rebound && player && now<rebound.until){
-      const frameDt=clamp(Number(dt)||0,0,.05);
-      const remaining=clamp((rebound.until-now)/rebound.duration,0,1);
-      const step=rebound.duration>0 ? 11.5*remaining*frameDt : 0;
-      const nx=player.position.x+(-Math.sin(heading))*step;
-      const nz=player.position.z+(Math.cos(heading))*step;
-      if(!collidesAt(nx,nz,.86)){
-        player.position.x=nx;
-        player.position.z=nz;
-      }else{
-        rebound.until=now;
-      }
-      path.unshift(player.position.clone());
-      if(path.length>360) path.length=360;
-      updateTrailMesh(t||performance.now());
-    }else if(rebound){
-      state.wallRebound=null;
-      if((state.wallFreezeUntil||0)<=now) state.wallFreezeUntil=0;
-    }
-
-    const fx=state.wallImpactFx;
-    if(fx && fx.ring){
-      const progress=clamp((performance.now()-fx.start)/440,0,1);
-      fx.ring.scale.setScalar(.9+progress*2.8);
-      fx.ring.material.opacity=.9*(1-progress);
-      if(progress>=1) removeImpactRing();
-    }
-
-    if(player && (state.wallDizzyUntil||0)>now){
-      const elapsed=performance.now()-(state.wallDizzyStart||performance.now());
-      const fade=clamp((state.wallDizzyUntil-now)/1450,0,1);
-      const wobble=Math.sin(elapsed*.032)*.78*fade;
-      player.rotation.y=-heading+wobble;
-      player.rotation.z=Math.sin(elapsed*.025)*.18*fade;
-      if(creatureHead) creatureHead.rotation.z=Math.sin(elapsed*.037)*.32*fade;
-      if(camera) camera.rotation.z=Math.sin(elapsed*.021)*.055*fade;
-    }
-  };
-})();
-
 </script>
 </head>
 <body>
@@ -3760,6 +3594,172 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 
 
 /* WILD TRAILS MULTIPLAYER V2 — TWO PLAYER READY LOBBY */
+
+/* WT HOME SAFE SPAWN + WALL REBOUND V1 */
+(function wtHomeSafeSpawnAndWallRebound(){
+  const previousCreatePlayer = createPlayer;
+  createPlayer = function(){
+    previousCreatePlayer();
+    if(!player || !world || (state.map!=="home" && state.map!=="kitchen")) return;
+
+    const preferred = state.map==="home" ? {x:0,z:19} : {x:8,z:19};
+    const clearSpawn = (x,z) => {
+      if(x < -27 || x > 27 || z < -23 || z > 23 || collidesAt(x,z,1.12)) return false;
+      // Check both the first few movement steps and the space occupied by the tail.
+      for(const distance of [1.25,2.5,3.75,5]){
+        if(collidesAt(x,z-distance,1.02) || collidesAt(x,z+distance,1.02)) return false;
+      }
+      return true;
+    };
+
+    let spawn = null;
+    if(clearSpawn(preferred.x,preferred.z)) spawn = preferred;
+    else {
+      const choices = [];
+      for(let x=-27;x<=27;x+=1.5){
+        for(let z=-23;z<=23;z+=1.5){
+          if(!clearSpawn(x,z)) continue;
+          const distance=Math.hypot(x-preferred.x,z-preferred.z);
+          choices.push({x,z,distance});
+        }
+      }
+      choices.sort((a,b)=>a.distance-b.distance);
+      spawn = choices[0] || (clearSpawn(0,0)?{x:0,z:0}:null);
+    }
+
+    if(spawn){
+      player.position.set(spawn.x,0,spawn.z);
+      heading=0;
+      player.rotation.set(0,0,0);
+      path.length=0;
+      for(let i=0;i<360;i++) path.push(new THREE.Vector3(spawn.x,0,spawn.z+i*.12));
+      updateTrailMesh(performance.now());
+      if(camera){
+        camera.position.set(spawn.x,5.2,spawn.z+10.4);
+        camera.lookAt(spawn.x,1,spawn.z);
+      }
+    }
+    state.wallFreezeUntil=0;
+    state.wallHitLockUntil=0;
+    state.wallReboundLockUntil=0;
+    state.wallRebound=null;
+    state.wallDizzyUntil=0;
+    toast("بداية آمنة — ابتعدنا عن الأثاث والعوائق");
+  };
+
+  const previousUpdateOpen = updateOpen;
+  const boundsForMap = () => {
+    if(state.map==="home" || state.map==="kitchen") return {minX:-31.2,maxX:31.2,minZ:-26.2,maxZ:26.2};
+    if(state.map==="station") return {minX:-21,maxX:21,minZ:-90,maxZ:90};
+    return {minX:-94,maxX:94,minZ:-94,maxZ:94};
+  };
+  const removeImpactRing = () => {
+    const fx=state.wallImpactFx;
+    if(!fx) return;
+    try{
+      world?.remove(fx.ring);
+      fx.ring.geometry?.dispose();
+      fx.ring.material?.dispose();
+    }catch{}
+    state.wallImpactFx=null;
+  };
+  const showImpactRing = () => {
+    if(!world || !player) return;
+    removeImpactRing();
+    const ring=new THREE.Mesh(
+      new THREE.TorusGeometry(.62,.065,9,32),
+      new THREE.MeshBasicMaterial({color:0xf0c878,transparent:true,opacity:.9,depthWrite:false})
+    );
+    ring.rotation.x=-Math.PI/2;
+    ring.position.set(player.position.x,.16,player.position.z);
+    world.add(ring);
+    state.wallImpactFx={ring,start:performance.now()};
+  };
+
+  updateOpen = function(dt,t){
+    if(!player || !world){ previousUpdateOpen(dt,t); return; }
+
+    const before={x:player.position.x,z:player.position.z};
+    const previousLock=Number(state.wallHitLockUntil)||0;
+    previousUpdateOpen(dt,t);
+
+    const now=Date.now();
+    const newLock=Number(state.wallHitLockUntil)||0;
+    const obstacleImpact=newLock>previousLock && newLock>now;
+    const bounds=boundsForMap();
+    const movingInput =
+      Math.hypot(Number(moveInput?.x)||0,Number(moveInput?.y)||0)>.12 ||
+      !!(keys.ArrowLeft||keys.ArrowRight||keys.ArrowUp||keys.ArrowDown||keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD);
+    const dirX=Math.sin(heading),dirZ=-Math.cos(heading);
+    const boundaryImpact=movingInput && now>=previousLock && (
+      (Math.max(before.x,player.position.x)>=bounds.maxX-.18 && dirX>.25) ||
+      (Math.min(before.x,player.position.x)<=bounds.minX+.18 && dirX<-.25) ||
+      (Math.max(before.z,player.position.z)>=bounds.maxZ-.18 && dirZ>.25) ||
+      (Math.min(before.z,player.position.z)<=bounds.minZ+.18 && dirZ<-.25)
+    );
+
+    if((obstacleImpact || boundaryImpact) && now>=(state.wallReboundLockUntil||0)){
+      const duration=520;
+      state.wallRebound={
+        vx:-Math.sin(heading)*11.5,
+        vz:Math.cos(heading)*11.5,
+        start:now,
+        until:now+duration,
+        duration
+      };
+      state.wallFreezeUntil=now+440;
+      state.wallHitLockUntil=now+1250;
+      state.wallReboundLockUntil=now+1250;
+      state.wallDizzyStart=performance.now();
+      state.wallDizzyUntil=now+1450;
+      // Brief impact protection prevents the knock-back from counting as a self-hit.
+      state.phaseUntil=Math.max(Number(state.phaseUntil)||0,now+680);
+      state.shieldUntil=Math.max(Number(state.shieldUntil)||0,now+680);
+      showImpactRing();
+      toast("ارتداد! اتدفعت بعيد عن الحائط ودوخت للحظة");
+    }
+
+    const rebound=state.wallRebound;
+    if(rebound && player && now<rebound.until){
+      const frameDt=clamp(Number(dt)||0,0,.05);
+      const remaining=clamp((rebound.until-now)/rebound.duration,0,1);
+      const step=rebound.duration>0 ? 11.5*remaining*frameDt : 0;
+      const nx=player.position.x+(-Math.sin(heading))*step;
+      const nz=player.position.z+(Math.cos(heading))*step;
+      if(!collidesAt(nx,nz,.86)){
+        player.position.x=nx;
+        player.position.z=nz;
+      }else{
+        rebound.until=now;
+      }
+      path.unshift(player.position.clone());
+      if(path.length>360) path.length=360;
+      updateTrailMesh(t||performance.now());
+    }else if(rebound){
+      state.wallRebound=null;
+      if((state.wallFreezeUntil||0)<=now) state.wallFreezeUntil=0;
+    }
+
+    const fx=state.wallImpactFx;
+    if(fx && fx.ring){
+      const progress=clamp((performance.now()-fx.start)/440,0,1);
+      fx.ring.scale.setScalar(.9+progress*2.8);
+      fx.ring.material.opacity=.9*(1-progress);
+      if(progress>=1) removeImpactRing();
+    }
+
+    if(player && (state.wallDizzyUntil||0)>now){
+      const elapsed=performance.now()-(state.wallDizzyStart||performance.now());
+      const fade=clamp((state.wallDizzyUntil-now)/1450,0,1);
+      const wobble=Math.sin(elapsed*.032)*.78*fade;
+      player.rotation.y=-heading+wobble;
+      player.rotation.z=Math.sin(elapsed*.025)*.18*fade;
+      if(creatureHead) creatureHead.rotation.z=Math.sin(elapsed*.037)*.32*fade;
+      if(camera) camera.rotation.z=Math.sin(elapsed*.021)*.055*fade;
+    }
+  };
+})();
+
 (function wildTrailsMultiplayer(){
  const MP_URL="wss://snake-evolution-mp.aamrabdelhay.workers.dev";
  const css=`
