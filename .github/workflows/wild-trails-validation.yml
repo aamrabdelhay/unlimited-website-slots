@@ -18,6 +18,7 @@ on:
       - 'public/wild-trails-art.mjs'
       - 'scripts/validate-wild-trails-lobby.mjs'
       - 'scripts/test-art.mjs'
+      - 'multiplayer-server/**'
       - '.github/workflows/wild-trails-validation.yml'
 
 jobs:
