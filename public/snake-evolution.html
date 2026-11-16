@@ -243,6 +243,18 @@
 @media(max-width:800px){.wt-map-stage{grid-template-columns:1fr}.wt-map-stage-art{min-height:170px}.wt-map-stage-info{padding:4px 3px}.wt-selected-companion{grid-template-columns:1fr 1fr}#stepContent.creature-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){#overlay .modal{width:100%;padding:13px;border-radius:14px}#overlay .mode-card{display:block;min-height:0;padding:9px}#overlay .mode-preview-shell{height:135px;min-height:135px;width:100%;margin-bottom:10px}#overlay .mode-copy{padding:4px 2px}#overlay .mode-copy strong{font-size:18px}#stepContent.map-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#stepContent .map-art{height:86px;min-height:86px}.wt-map-stage{padding:8px;gap:9px}.wt-map-stage-art,.wt-map-stage-art img,.wt-map-stage-art canvas{min-height:145px}.wt-selected-companion{grid-template-columns:1fr;gap:8px;padding:9px}.wt-selected-preview{height:190px;min-height:190px}.wt-selected-hint{grid-column:auto}#stepContent.creature-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#stepContent .creature-portrait{height:118px}#overlay .modal-foot{align-items:stretch;flex-direction:column}#overlay .foot-actions{justify-content:space-between}}
 
+
+/* Wild Trails anime-art presentation and accessible quality controls */
+.settings-panel label[for="wtQuality"]{margin-top:14px}
+#wtQuality{width:100%;min-height:38px;border:1px solid #c7a96888;border-radius:9px;padding:8px 10px;background:linear-gradient(145deg,#263c30,#15231b);color:#f5ebd5;font:700 12px system-ui;outline:none}
+#wtQuality:focus-visible{outline:2px solid #e6c780;outline-offset:2px}
+.hud .stat,.hud .hud-btn{border-color:#c5aa6b55;background:linear-gradient(145deg,#182c24eF,#101b17eF);box-shadow:0 5px 18px #07130e55,inset 0 1px #ffffff0b}
+.hud .stat b{color:#f5d38b}
+.overlay{background:radial-gradient(ellipse at 16% 12%,#5a8b9c35,transparent 45%),radial-gradient(ellipse at 85% 84%,#c58a5630,transparent 38%),rgba(4,10,12,.92)}
+.modal{border-color:#d2b77877;box-shadow:0 30px 100px #000b,inset 0 1px #ffffff15}
+.mode-card.selected,.map-card.selected,.creature-card.selected{border-color:#dfc27a;box-shadow:inset 0 0 0 1px #e3c77d66,0 12px 28px #0004}
+.action.primary{background:linear-gradient(135deg,#416b58,#274433);border-color:#a6c39b;color:#fff7e6}
+.action.primary:hover{background:linear-gradient(135deg,#56866d,#34583f)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
 </script>
@@ -256,7 +268,7 @@
  </header>
  <div class="power-readout" id="powerReadout">التقط الطعام لتحصل على قدرات مؤقتة</div>
  <div class="touch-controls" id="touchControls"><div class="stick" id="movePad" aria-label="عصا حركة"><div class="stick-knob" id="moveKnob"></div><div class="stick-label">الحركة</div></div><div class="gesture-hint" id="gestureHint">اسحب الشاشة لتحديد الاتجاه · اسحب يمين الشاشة لتدوير الكاميرا</div></div>
- <div class="settings-panel hidden" id="settingsPanel" role="dialog" aria-label="إعدادات التحكم"><div class="settings-head"><strong>إعدادات التحكم</strong><button class="settings-close" id="settingsClose" aria-label="إغلاق">×</button></div><label for="stickScale">حجم عصا التحكم</label><div class="settings-range"><span>صغير</span><input id="stickScale" type="range" min="70" max="155" step="5" value="100"><span>كبير</span></div><output id="stickScaleValue">100%</output><label for="stickSide">مكان عصا التحكم</label><select id="stickSide"><option value="left">يسار الشاشة</option><option value="right">يمين الشاشة</option></select><label for="stickOpacity">شفافية عصا التحكم</label><div class="settings-range"><span>أخف</span><input id="stickOpacity" type="range" min="20" max="100" step="5" value="64"><span>أوضح</span></div><output id="stickOpacityValue">64%</output></div>
+ <div class="settings-panel hidden" id="settingsPanel" role="dialog" aria-label="إعدادات التحكم"><div class="settings-head"><strong>إعدادات التحكم</strong><button class="settings-close" id="settingsClose" aria-label="إغلاق">×</button></div><label for="stickScale">حجم عصا التحكم</label><div class="settings-range"><span>صغير</span><input id="stickScale" type="range" min="70" max="155" step="5" value="100"><span>كبير</span></div><output id="stickScaleValue">100%</output><label for="stickSide">مكان عصا التحكم</label><select id="stickSide"><option value="left">يسار الشاشة</option><option value="right">يمين الشاشة</option></select><label for="stickOpacity">شفافية عصا التحكم</label><div class="settings-range"><span>أخف</span><input id="stickOpacity" type="range" min="20" max="100" step="5" value="64"><span>أوضح</span></div><output id="stickOpacityValue">64%</output><label for="wtQuality">جودة الرسوم ثلاثية الأبعاد</label><select id="wtQuality"><option value="low">منخفضة · أداء أعلى</option><option value="medium">متوسطة · متوازنة</option><option value="high">عالية · تفاصيل أكثر</option></select></div>
  <div class="toast" id="toast"></div>
  <div class="overlay" id="overlay"><section class="modal"><div class="modal-head"><div><div class="eyebrow">WILD TRAILS · GAME SELECT</div><h1 id="stepTitle">اختر طريقة اللعب</h1></div><div class="modal-tools"><div class="step-count" id="stepCount">01 / 03</div><button class="settings-menu-button" id="settingsMenuBtn" aria-label="الإعدادات" title="الإعدادات">⚙</button></div></div><p class="sub" id="stepSub">اختَر التجربة التي تريدها. ضغطة واحدة تنقلك مباشرة للخطوة التالية.</p><div id="stepContent" class="cards"></div><div class="modal-foot"><span class="foot-note" id="stepHint">اختر المود للمتابعة.</span><div class="foot-actions"><button class="action" id="backBtn" hidden>رجوع</button><button class="action" id="closeBtn">إغلاق</button><button class="action primary" id="continueBtn" disabled>اختر مودًا للمتابعة</button></div></div></section></div>
  <div class="result hidden" id="result"><section class="result-card"><div class="eyebrow">ROUND FINISHED</div><h2>انتهت الجولة</h2><p id="resultReason">حاول مرة أخرى وحسّن نتيجتك.</p><div class="result-score" id="resultScore">0</div><div class="result-actions"><button class="action primary" id="restartBtn">العب مرة أخرى</button><button class="action" id="resultMenuBtn">القائمة الرئيسية</button></div></section></div>
@@ -372,8 +384,31 @@ $('menuBtn').onclick=()=>{state.paused=true;stopLoop();state.shopOnly=false;$('o
 $('pauseBtn').onclick=()=>{if(!state.started||state.roundOver)return;state.paused=!state.paused;$('pauseBtn').textContent=state.paused?'استكمال':'إيقاف';if(state.paused)stopLoop();else startLoop()};
 let raf=0,THREE=null,threePromise=null,GLTFLoader=null,SkeletonUtils=null,gltfLoader=null,gltfCache=new Map(),animationMixers=[],renderer=null,scene=null,camera=null,world=null,player=null,creatureHead=null,bodyParts=[],foodItems=[],obstacles=[],path=[],trailMesh=null,trailRingCount=18,heading=0,cameraYaw=0,cameraPitch=.32,cameraDistance=8.5,moveInput={x:0,y:0},lookInput={x:0,y:0},keys={},clockLast=0,classic=null;
 function stopLoop(){if(raf)cancelAnimationFrame(raf);raf=0}function startLoop(){if(state.paused||!state.started||state.roundOver||raf)return;clockLast=performance.now();if(state.mode==='old')raf=requestAnimationFrame(classicFrame);else raf=requestAnimationFrame(openFrame)}
-let wtArt=null;
-function loadThree(){if(!threePromise)threePromise=import('three').then(async m=>{THREE=m;const [loaderModule,utilsModule,artModule]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/utils/SkeletonUtils.js'),import('./wild-trails-art.mjs').catch(e=>{console.warn('Art enhancement unavailable; using original rendering',e);return null})]);GLTFLoader=loaderModule.GLTFLoader;SkeletonUtils=utilsModule;wtArt=artModule;gltfLoader=new GLTFLoader();return m}).catch(e=>{console.warn('3D asset loader unavailable',e);threePromise=null;return null});return threePromise}
+let wtArt=null,wtToon=null,wtSkyDome=null;
+let wtQuality='medium';
+try{const stored=localStorage.getItem('wild-quality');if(['low','medium','high'].includes(stored))wtQuality=stored}catch{}
+const wtMobileQuality=()=>matchMedia('(max-width: 700px)').matches;
+function wtApplyAnimeStyle(){
+ if(!THREE||!scene||!world||!wtToon)return;
+ const palette=wtToon.getAnimeSkyPalette(state.map);
+ wtToon.applyAnimeScene(THREE,world,wtQuality,palette);
+ if(wtSkyDome)wtToon.disposeAnimeSkyDome(scene,wtSkyDome);
+ wtSkyDome=wtToon.createAnimeSkyDome(THREE,scene,state.map);
+ if(scene.fog?.color)scene.fog.color.setHex(palette.fog);
+ if(scene.background?.setHex)scene.background.setHex(palette.top);
+ if(wtArt?.applyBiomeLighting)wtArt.applyBiomeLighting(scene,renderer,state.map);
+ if(renderer){wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());resize3D()}
+}
+function wtSetQuality(value){
+ wtQuality=['low','medium','high'].includes(value)?value:'medium';
+ safeSave('wild-quality',wtQuality);
+ const palette=wtToon?.getAnimeSkyPalette(state.map);
+ if(wtToon&&world)wtToon.updateAnimeQuality(world,wtQuality,palette);
+ if(wtToon&&renderer){wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());resize3D()}
+ if(scene?.fog?.color&&palette)scene.fog.color.setHex(palette.fog);
+ const select=$('wtQuality');if(select&&select.value!==wtQuality)select.value=wtQuality;
+}
+function loadThree(){if(!threePromise)threePromise=import('three').then(async m=>{THREE=m;const [loaderModule,utilsModule,artModule,toonModule]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/utils/SkeletonUtils.js'),import('./wild-trails-art.mjs').catch(e=>{console.warn('Art enhancement unavailable; using original rendering',e);return null}),import('./wild-trails-toon.mjs').catch(e=>{console.warn('Anime rendering enhancement unavailable; using original rendering',e);return null})]);GLTFLoader=loaderModule.GLTFLoader;SkeletonUtils=utilsModule;wtArt=artModule;wtToon=toonModule;gltfLoader=new GLTFLoader();return m}).catch(e=>{console.warn('3D asset loader unavailable',e);threePromise=null;return null});return threePromise}
 const GAME_ASSETS={
  animals:{duck:'https://gobkit.com/freebies/animal/Duck.glb',owl:'https://gobkit.com/freebies/animalB/Owl.glb',fish:'https://gobkit.com/freebies/animal/Shark.glb',bird:'https://gobkit.com/freebies/animal/Bat.glb',cat:'https://gobkit.com/freebies/animal/Corgi.glb',deer:'https://gobkit.com/freebies/animalB/Goat.glb',falcon:'https://gobkit.com/freebies/animalB/Seagull.glb',chicken:'https://gobkit.com/freebies/animalB/Quail.glb'},
  environment:{bush:'https://gobkit.com/freebies/environment/Bush001.glb',bush2:'https://gobkit.com/freebies/environment/Bush002.glb',grass:'https://gobkit.com/freebies/environment/Grass001.glb',grass2:'https://gobkit.com/freebies/environment/Grass002.glb',cliff:'https://gobkit.com/freebies/environment/Cliff001.glb',cliff2:'https://gobkit.com/freebies/environment/Cliff002.glb',hill:'https://gobkit.com/freebies/environment/Hill001.glb',hill2:'https://gobkit.com/freebies/environment/Hill002.glb',cloud:'https://gobkit.com/freebies/environment/Cloud001.glb',mountain:'https://gobkit.com/freebies/environment/Mountain001.glb'}
@@ -384,7 +419,8 @@ async function loadPlayerModel(){
  const skin=skins[state.skin],url=GAME_ASSETS.animals[skin?.id];if(!url||!player)return;const owner=player,selected=state.skin;
  try{const gltf=await loadGameModel(url);if(!state.started||state.mode==='old'||player!==owner||state.skin!==selected)return;
   const model=fitAsset(SkeletonUtils.clone(gltf.scene),skin.id==='fish'?1.35:1.65);model.rotation.y=Math.PI;model.position.z=-.18;
-  model.traverse(o=>{o.userData.sharedAsset=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});
+  model.traverse(o=>{o.userData.sharedAsset=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=true;if(/leaf|foliage|grass|plant|crown/i.test(o.name||''))o.userData.wtWindFoliage=true}});
+  if(wtToon)wtToon.applyAnimeScene(THREE,model,wtQuality,wtToon.getAnimeSkyPalette(state.map));
   if(creatureHead?.parent)creatureHead.parent.remove(creatureHead);owner.add(model);creatureHead=model;
   if(gltf.animations?.length){const mixer=new THREE.AnimationMixer(model),master=gltf.animations[0],idle=THREE.AnimationUtils.subclip(master,'idle',0,30,24),walk=THREE.AnimationUtils.subclip(master,'walk',90,120,24),idleAction=mixer.clipAction(idle),walkAction=mixer.clipAction(walk);idleAction.play();animationMixers.push({mixer,idleAction,walkAction,active:'idle'})}
  }catch(e){console.warn('Player model fallback retained',e)}
@@ -398,7 +434,9 @@ async function loadEnvironmentAssets(){
  }else if(state.map==='street'||state.map==='station'){for(let i=0;i<6;i++)placements.push([i%2?'bush':'bush2',(i%2?1:-1)*23,-48+i*18,2.3])}
  const kinds=[...new Set(placements.map(p=>p[0]))];
  await Promise.all(kinds.map(async kind=>{try{const gltf=await loadGameModel(GAME_ASSETS.environment[kind]);if(world!==targetWorld)return;
-  for(const [k,x,z,size] of placements){if(k!==kind)continue;const root=fitAsset(SkeletonUtils.clone(gltf.scene),size);root.position.set(x,0,z);root.rotation.y=(x+z)*.013;root.traverse(o=>{o.userData.sharedAsset=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});targetWorld.add(root);obstacles.push({x,z,r:Math.max(.9,size*.42),source:'asset'})}
+  for(const [k,x,z,size] of placements){if(k!==kind)continue;const root=fitAsset(SkeletonUtils.clone(gltf.scene),size);root.position.set(x,0,z);root.rotation.y=(x+z)*.013;root.traverse(o=>{o.userData.sharedAsset=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=true;if(/leaf|foliage|grass|plant|crown/i.test(o.name||''))o.userData.wtWindFoliage=true}});
+  if(wtToon)wtToon.applyAnimeScene(THREE,root,wtQuality,wtToon.getAnimeSkyPalette(state.map));
+  targetWorld.add(root);obstacles.push({x,z,r:Math.max(.9,size*.42),source:'asset'})}
  }catch(e){console.warn('Environment asset skipped',kind,e)}}));
 }
 
@@ -873,7 +911,7 @@ function makeFood(){
  const roll=Math.random();let type='normal';if(roll<.04)type='bonus';else if(roll<.08)type='speed';else if(roll<.12)type='shield';else if(roll<.16)type='magnet';
  const f=type==='normal'?createPreyModel(skins[state.skin].id):createPowerFood(type);let x=0,z=0,valid=false;
  for(let tries=0;tries<90&&!valid;tries++){x=(Math.random()-.5)*88;z=(Math.random()-.5)*88;valid=Math.hypot(x-player.position.x,z-player.position.z)>5&&(!state.obstacles||!collidesAt(x,z,1.1))&&foodItems.every(q=>Math.hypot(q.position.x-x,q.position.z-z)>2.2)}
- f.position.set(x,.55,z);f.userData={...f.userData,type,value:type==='bonus'?5:1,phase:Math.random()*6};world.add(f);foodItems.push(f);
+ f.position.set(x,.55,z);f.userData={...f.userData,type,value:type==='bonus'?5:1,phase:Math.random()*6};if(wtToon)wtToon.applyAnimeScene(THREE,f,wtQuality,wtToon.getAnimeSkyPalette(state.map));world.add(f);foodItems.push(f);
 }
 
 
@@ -881,6 +919,7 @@ function initRenderer(){
  if(renderer){if(renderer.domElement.parentNode!==$('game'))$('game').replaceChildren(renderer.domElement);resize3D();return true}
  try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance',stencil:false,depth:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,matchMedia('(max-width: 700px)').matches?1.25:1.6));renderer.setSize(window.innerWidth,window.innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   $('game').replaceChildren(renderer.domElement);scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,260);scene.add(new THREE.HemisphereLight(0xeaf2e6,0x45513e,1.75));const sun=new THREE.DirectionalLight(0xffe8bf,2.15);sun.position.set(18,32,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-85;sun.shadow.camera.right=85;sun.shadow.camera.top=85;sun.shadow.camera.bottom=-85;sun.shadow.bias=-0.00018;sun.shadow.normalBias=0.025;scene.add(sun);
+  if(wtToon)wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());
   window.addEventListener('resize',resize3D);window.visualViewport?.addEventListener('resize',resize3D);return true;
  }catch(e){console.error(e);return false}
 }
@@ -892,6 +931,7 @@ function openFrame(t){
  raf=0;if(state.paused||state.roundOver||!state.started)return;const dt=Math.min((t-clockLast)/1000,.04);clockLast=t;updateOpen(dt,t);
  const moving=Math.hypot(moveInput.x,moveInput.y)>.12||Object.keys(keys).some(k=>keys[k]&&(/^Arrow/.test(k)||/^Key[WASD]$/.test(k)));
  for(const entry of animationMixers){if(entry.mixer){entry.mixer.update(dt);const next=moving?'walk':'idle';if(next!==entry.active){const from=next==='walk'?entry.idleAction:entry.walkAction,to=next==='walk'?entry.walkAction:entry.idleAction;to.reset().play();from.crossFadeTo(to,.2,false);entry.active=next}}}
+ if(wtToon){wtToon.updateAnimeSkyDome(wtSkyDome,camera);wtToon.updateAnimeWind(world,t*.001)}
  renderer.render(scene,camera);raf=requestAnimationFrame(openFrame);
 }
 
@@ -1002,7 +1042,7 @@ function bindStick(padId,knobId,callback){
 }
 bindStick('movePad','moveKnob',(x,y)=>moveInput={x,y});
 function applyStickScale(value){const n=clamp(Number(value)||100,70,155);document.documentElement.style.setProperty('--stick-scale',String(n/100));$('stickScale').value=String(n);$('stickScaleValue').textContent=n+'%';try{localStorage.setItem('wild-stick-scale',String(n))}catch{}}
-function bindSettings(){let saved=100;try{saved=Number(localStorage.getItem('wild-stick-scale'))||100}catch{}applyStickScale(saved);const toggle=()=>$('settingsPanel').classList.toggle('hidden');$('settingsBtn').addEventListener('click',toggle);$('settingsMenuBtn').addEventListener('click',toggle);$('settingsClose').addEventListener('click',()=>$('settingsPanel').classList.add('hidden'));$('stickScale').addEventListener('input',e=>applyStickScale(e.target.value));document.addEventListener('pointerdown',e=>{if(!$('settingsPanel').contains(e.target)&&e.target!==$('settingsBtn')&&e.target!==$('settingsMenuBtn'))$('settingsPanel').classList.add('hidden')})}
+function bindSettings(){let saved=100;try{saved=Number(localStorage.getItem('wild-stick-scale'))||100}catch{}applyStickScale(saved);const toggle=()=>$('settingsPanel').classList.toggle('hidden');$('settingsBtn').addEventListener('click',toggle);$('settingsMenuBtn').addEventListener('click',toggle);$('settingsClose').addEventListener('click',()=>$('settingsPanel').classList.add('hidden'));$('stickScale').addEventListener('input',e=>applyStickScale(e.target.value));const quality=$('wtQuality');if(quality){quality.value=wtQuality;quality.addEventListener('change',e=>wtSetQuality(e.target.value))}document.addEventListener('pointerdown',e=>{if(!$('settingsPanel').contains(e.target)&&e.target!==$('settingsBtn')&&e.target!==$('settingsMenuBtn'))$('settingsPanel').classList.add('hidden')})}
 function bindDirectGameGestures(){
  const area=$('game');let gesture=null;
  // Mouse wheel zoom for desktop; keep the camera safely inside its follow range.
@@ -1048,7 +1088,7 @@ function startGame(){stopLoop();state.roundOver=false;state.score=0;state.paused
 async function startOpenGame(){
  toast('تحميل العالم ثلاثي الأبعاد…');if(!await loadThree()){state.paused=true;state.started=false;$('overlay').classList.remove('hidden');showStep(0);toast('تعذر تحميل محرك 3D. تحقق من اتصال الإنترنت.');return}
  if(!initRenderer()){state.paused=true;state.started=false;$('overlay').classList.remove('hidden');toast('تعذر تهيئة الرسوم ثلاثية الأبعاد على هذا الجهاز.');return}
- buildEnvironment();createPlayer();for(let i=0;i<18;i++)makeFood();lastFood=performance.now();resize3D();startLoop();
+ buildEnvironment();createPlayer();for(let i=0;i<18;i++)makeFood();wtApplyAnimeStyle();lastFood=performance.now();resize3D();startLoop();
 }
 $('restartBtn').onclick=()=>{state.paused=false;startGame()};$('resultMenuBtn').onclick=()=>{$('result').classList.add('hidden');state.started=false;state.paused=true;$('overlay').classList.remove('hidden');showStep(0)};
 showStep(0);updateHud();
