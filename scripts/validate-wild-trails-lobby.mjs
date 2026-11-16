@@ -16,6 +16,9 @@ const required = [
   ['mode/map/character selection', 'wildTrailsLobbyExperience'],
   ['character selection before round start', 'انطلق إلى العالم'],
   ['selected 3D map preview', 'syncMapPreview'],
+  ['responsive 3D map detail panel', '.wt-map-stage{display:grid'],
+  ['selected character preview surface', '.wt-selected-companion{display:grid'],
+  ['pixel map canvases', '#stepContent .wt-pixel-map'],
   ['energy system', 'wt-energy'],
   ['daily missions and profile progression', 'wtMissionsDef'],
   ['separate gold pickups', 'function wtMakeGoldCoin'],
@@ -47,6 +50,7 @@ assert.deepEqual(Object.keys(BIOME_LIGHTING).sort(), ['garden','home','kitchen',
 
 for (const forbidden of [
   'state.coins+=f.userData.value||1',
+  'state.coins+=f.userData.value;',
   'state.score++;state.coins++;classic.food=',
   'state.score++;state.coins++;classic.power=null'
 ]) assert.ok(!html.includes(forbidden), 'Food must not award spendable gold directly: ' + forbidden);
