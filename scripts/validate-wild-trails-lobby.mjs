@@ -20,7 +20,7 @@ const required = [
   ['wildlife system', 'function wtUpdateWildlife'],
   ['safe map spawning', 'function wtChoosePlayerSpawn'],
   ['collision knockback and dizzy reaction', 'function wtHandleImpact'],
-  ['station crossing fix', 'Station platform collision'],
+  ['station pedestrian crossing', 'const deck=new THREE.Mesh(new THREE.BoxGeometry(29,.16,5.2)'],
   ['snake dynamic body mesh', 'wtArt.createSnakeBodyMesh'],
   ['articulated snake head', 'wtArt.enhanceSnakeHead'],
   ['cinematic PBR shader pass', 'function wtInstallPBRShader'],
