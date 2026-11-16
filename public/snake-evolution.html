@@ -3920,6 +3920,45 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  function resetRoom(){mpActive=false;hasStarted=false;mpDead=false;clearInterval(countdownTimer);clearTimeout(startTimer);closeSocket();clearRemote();players.clear();hud.style.display="none"}
  function showSetup(){resetRoom();$mp("mpSetup").style.display="block";$mp("mpLobby").style.display="none";panel.classList.add("show")}
  openBtn.addEventListener("click",()=>{$mp("mpRoom").value="";$mp("mpName").value=localStorage.getItem("wild-mp-name")||"لاعب";$mp("mpMap").value=state.map||"garden";chosen="race";panel.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===chosen));showSetup()});
+ const mpModeCardStyle=document.createElement("style");
+ mpModeCardStyle.textContent=`
+  #stepContent.mode-grid .wt-multiplayer-mode-card{display:flex!important;flex-direction:column!important;justify-content:space-between;gap:12px;min-height:220px;width:100%;padding:13px;position:relative;z-index:5;cursor:pointer;border:1px solid #d8b36b88;background:linear-gradient(145deg,#263d2d,#101d17);color:#f7f0df;border-radius:18px;box-shadow:0 14px 34px #0005;transition:transform .2s,border-color .2s,box-shadow .2s}
+  #stepContent.mode-grid .wt-multiplayer-mode-card:hover{transform:translateY(-4px);border-color:#efcf83;box-shadow:0 20px 44px #0008}
+  .wt-mp-mode-art{position:relative;display:grid;place-items:center;height:122px;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#83c1aa35,transparent 62%),linear-gradient(145deg,#345640,#15271d);border:1px solid #d8bd7c44}
+  .wt-mp-mode-art:before,.wt-mp-mode-art:after{content:"";position:absolute;width:230px;height:230px;border:1px solid #e5d09344;border-radius:50%;transform:rotate(-22deg) scaleY(.42)}
+  .wt-mp-mode-art:after{width:178px;height:178px;border-color:#e5d09377}
+  .wt-mp-arena{position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.6%,#f4e1ae44 50%,transparent 50.5%),linear-gradient(0deg,transparent 49.6%,#f4e1ae33 50%,transparent 50.5%);opacity:.65}
+  .wt-mp-avatar{position:absolute;z-index:2;width:30px;height:30px;border-radius:45% 45% 40% 40%;background:linear-gradient(140deg,#b9e38c,#4c8e58);border:2px solid #f1e4bd;box-shadow:0 7px 16px #07120e99}
+  .wt-mp-avatar:after{content:"";position:absolute;width:5px;height:5px;right:6px;top:7px;border-radius:50%;background:#203b2b;box-shadow:-10px 0 #203b2b}
+  .wt-mp-avatar.one{left:25%;top:34%;transform:rotate(-17deg)}
+  .wt-mp-avatar.two{right:25%;bottom:24%;background:linear-gradient(140deg,#f2d58c,#b77b3f);transform:rotate(21deg)}
+  .wt-mp-orb{position:absolute;z-index:1;width:9px;height:9px;border-radius:50%;background:#f4d17b;box-shadow:0 0 17px #f4d17b}
+  .wt-mp-orb.a{left:48%;top:25%}.wt-mp-orb.b{right:40%;bottom:24%;width:6px;height:6px}
+  .wt-mp-online{position:absolute;z-index:3;left:10px;top:10px;display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:99px;background:#0c1c14df;border:1px solid #9bc49b66;font:800 9px system-ui;letter-spacing:.1em;color:#bce3ae}
+  .wt-mp-online:before{content:"";width:6px;height:6px;border-radius:50%;background:#9de27c;box-shadow:0 0 9px #9de27c}
+  .wt-mp-mode-copy{display:flex;flex-direction:column;gap:7px;text-align:right}
+  .wt-mp-mode-copy strong{font-size:19px;letter-spacing:.03em;color:#f5dfad}
+  .wt-mp-mode-copy small{color:#c1cdbd;line-height:1.7;font-size:11px}
+  .wt-mp-mode-copy em{font-style:normal;color:#e6c77f;font-size:10px;font-weight:900}
+  @media(max-width:900px){#stepContent.mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+  @media(max-width:560px){#stepContent.mode-grid{grid-template-columns:1fr!important}#stepContent.mode-grid .wt-multiplayer-mode-card{min-height:185px}.wt-mp-mode-art{height:105px}}
+ `;
+ document.head.appendChild(mpModeCardStyle);
+ const mpPreviousShowStep=showStep;
+ showStep=function(step){
+  mpPreviousShowStep(step);
+  if(step!==0)return;
+  const host=$("stepContent");
+  if(!host||host.querySelector("#wtMultiplayerModeCard"))return;
+  const card=document.createElement("button");
+  card.type="button";card.id="wtMultiplayerModeCard";
+  card.className="mode-card wt-multiplayer-mode-card";
+  card.setAttribute("aria-label","فتح مود اللعب الجماعي أونلاين");
+  card.innerHTML='<div class="wt-mp-mode-art"><div class="wt-mp-arena"></div><span class="wt-mp-online">ONLINE ARENA</span><span class="wt-mp-avatar one"></span><span class="wt-mp-avatar two"></span><i class="wt-mp-orb a"></i><i class="wt-mp-orb b"></i></div><span class="wt-mp-mode-copy"><strong>ONLINE MULTIPLAYER</strong><small>العب أونلاين مع لاعب آخر في غرفة مشتركة، واختاروا نفس الخريطة والمود.</small><em>3 أوضاع · لاعبان · عدّ تنازلي متزامن</em></span>';
+  card.addEventListener("click",()=>openBtn.click());
+  host.appendChild(card);
+  host.style.gridTemplateColumns="repeat(3,minmax(0,1fr))";
+ };
  $mp("mpClose").onclick=()=>{panel.classList.remove("show");resetRoom()};
  panel.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{chosen=b.dataset.mode;panel.querySelectorAll("[data-mode]").forEach(x=>x.classList.toggle("active",x===b))});
  function setLobbyHint(t){$mp("mpLobbyHint").textContent=t}
@@ -3999,7 +4038,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  };
  // Avoid tiny decorative station fixtures being registered as giant collision
  // volumes; only the parked train carriages and true props remain solid.
-})()
+})();
 
 (function wildTrailsEvolutionSystems(){
   if(state.energy===undefined)state.energy=100;
@@ -4632,7 +4671,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   updateHud();
   wtUpdateEnergyUI();
   wtMissionPanelRender();
-})()
+})();
 
 (function wildTrailsCinematicVisualPass(){
   const wtVisualTime={value:0};
@@ -5035,7 +5074,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     wtBaseUpdateOpen(dt,t);
     if(wtParticleMaterial?.uniforms?.uTime)wtParticleMaterial.uniforms.uTime.value=t*.001;
   };
-})()
+})();
 
 (function wildTrailsGroundingPass(){
   let shadowTexture=null;
@@ -5079,7 +5118,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   }
   const build=buildEnvironment;
   buildEnvironment=function(){build();surfaceAccents()};
-})()
+})();
 
 (function wildTrailsLivingLobby(){
   const previews=new Map();
@@ -5258,7 +5297,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     if(document.hidden)stopPreviewLoop();
     else if(state.step===2)renderCreaturePreviews();
   });
-})()
+})();
 
 (function wildTrailsBiomeBorders(){
   function borderLine(points,sourceMaterial){
@@ -5285,7 +5324,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   }
   const prevBuild=buildEnvironment;
   buildEnvironment=function(){prevBuild();addBoundaryMarkers()};
-})()
+})();
 
 (function wildTrailsPhaseOneSnakeFoundation(){
   const isSnake=()=>skins[state.skin]?.id==='snake';
@@ -5361,7 +5400,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     previousUpdateOpen(dt,t);
     if(isSnake()&&camera&&player)camera.lookAt(player.position.x,.84,player.position.z);
   };
-})()
+})();
 
 (function wildTrailsLobbyExperience(){
   const pixelCache=new Map(),pixelCanvasSet=new Set(),buffers=new WeakMap();

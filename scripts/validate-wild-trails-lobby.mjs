@@ -10,6 +10,8 @@ const codeStart = moduleStart + moduleOpen.length;
 const moduleEnd = html.indexOf('</script>', codeStart);
 assert.notEqual(moduleEnd, -1, 'Game module script must close');
 new Function(html.slice(codeStart, moduleEnd));
+assert.equal([...html.matchAll(/\\}\\)\\(\\)\\s*\\n\\s*\\(/g)].length, 0, 'Every adjacent game IIFE must be separated by a statement terminator so runtime initialization can continue.');
+
 
 const required = [
   ['three-step lobby navigation', '.wt-lobby-progress'],
@@ -36,7 +38,11 @@ const required = [
   ['ambient biome particles', 'function wtAddAmbientParticles'],
   ['soft creature contact shadows', 'Soft creature contact shadow'],
   ['all six map boundaries', 'function addBoundaryMarkers'],
-  ['low-power animated lobby previews', 'function renderLobbyPreviewFrame']
+  ['low-power animated lobby previews', 'function renderLobbyPreviewFrame'],
+  ['visible multiplayer mode card', 'wtMultiplayerModeCard'],
+  ['online room WebSocket endpoint', 'wss://snake-evolution-mp.aamrabdelhay.workers.dev'],
+  ['two-player ready lobby', 'أنا جاهز'],
+  ['synchronized multiplayer countdown', 'match:countdown']
 ];
 for (const [label, fragment] of required) {
   assert.ok(html.includes(fragment), 'Missing feature: ' + label);
