@@ -3985,6 +3985,22 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   showStep(state.step);
 })();
 
+
+/* Biome lighting is lazy-loaded and applied after the current 3D world is built.
+   A missing enhancement module never blocks the base game. */
+(function wildTrailsBiomeLightingIntegration(){
+  let lightingModulePromise=null;
+  const originalBuildEnvironment=buildEnvironment;
+  buildEnvironment=function(...args){
+    const result=originalBuildEnvironment.apply(this,args);
+    if(!lightingModulePromise)lightingModulePromise=import('./wild-trails-biome-lighting.mjs');
+    lightingModulePromise.then(module=>{
+      if(scene&&renderer&&state.mode==='open')module.applyBiomeLighting(scene,renderer,state.map);
+    }).catch(error=>console.warn('Biome lighting enhancement unavailable; using default lighting',error));
+    return result;
+  };
+})();
+
 </script>
 </body>
 </html>
