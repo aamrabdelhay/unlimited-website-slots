@@ -1,0 +1,65 @@
+name: Wild Trails gameplay and art validation
+
+on:
+  push:
+    branches:
+      - main
+      - feature/wild-trails-lobby-upgrades
+    paths:
+      - 'public/snake-evolution.html'
+      - 'public/wild-trails-art.mjs'
+      - 'scripts/validate-wild-trails-lobby.mjs'
+      - 'scripts/test-art.mjs'
+      - 'multiplayer-server/**'
+      - '.github/workflows/wild-trails-validation.yml'
+  pull_request:
+    paths:
+      - 'public/snake-evolution.html'
+      - 'public/wild-trails-art.mjs'
+      - 'scripts/validate-wild-trails-lobby.mjs'
+      - 'scripts/test-art.mjs'
+      - 'multiplayer-server/**'
+      - '.github/workflows/wild-trails-validation.yml'
+
+jobs:
+  validate-game:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate integrated game features and syntax
+        run: node scripts/validate-wild-trails-lobby.mjs
+      - name: Test procedural geometry and animation modules
+        run: node --test scripts/test-art.mjs
+
+  validate-multiplayer-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: multiplayer-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install multiplayer server dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck multiplayer server
+        run: npm run typecheck
+      - name: Test authoritative multiplayer rules
+        run: npm test
+
+  build-next-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install application dependencies
+        run: npm ci
+      - name: Run the Vercel production build command
+        run: npm run build
