@@ -10,6 +10,7 @@ on:
       - 'public/wild-trails-art.mjs'
       - 'scripts/validate-wild-trails-lobby.mjs'
       - 'scripts/test-art.mjs'
+      - 'multiplayer-server/**'
       - '.github/workflows/wild-trails-validation.yml'
   pull_request:
     paths:
@@ -31,3 +32,20 @@ jobs:
         run: node scripts/validate-wild-trails-lobby.mjs
       - name: Test procedural geometry and animation modules
         run: node --test scripts/test-art.mjs
+
+  validate-multiplayer-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: multiplayer-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install multiplayer server dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck multiplayer server
+        run: npm run typecheck
+      - name: Test authoritative multiplayer rules
+        run: npm test
