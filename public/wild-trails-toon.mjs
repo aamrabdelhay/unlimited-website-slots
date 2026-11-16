@@ -58,6 +58,7 @@ export function applyAnimeMaterial(THREE, material, options = {}) {
     rimColor: new THREE.Color(options.rimColor ?? 0xa9e6df),
     rimStrength: Number.isFinite(options.rimStrength) ? options.rimStrength : 0.16,
     outlineStrength: Number.isFinite(options.outlineStrength) ? options.outlineStrength : 0.025,
+    windStrength: Number.isFinite(options.windStrength) ? options.windStrength : 0,
     shader: null
   };
   const previousCompile = material.onBeforeCompile;
@@ -70,6 +71,28 @@ export function applyAnimeMaterial(THREE, material, options = {}) {
     shader.uniforms.wtAnimeRimColor = { value: state.rimColor };
     shader.uniforms.wtAnimeRimStrength = { value: state.rimStrength };
     shader.uniforms.wtAnimeOutlineStrength = { value: state.outlineStrength };
+    shader.uniforms.wtAnimeTime = { value: 0 };
+    shader.uniforms.wtAnimeWindStrength = { value: state.windStrength };
+
+    const vertexUniforms = `
+      uniform float wtAnimeTime;
+      uniform float wtAnimeWindStrength;
+    `;
+    const vertexCommon = '#include <common>';
+    if (shader.vertexShader.includes(vertexCommon)) {
+      shader.vertexShader = shader.vertexShader.replace(vertexCommon, vertexCommon + '\\n' + vertexUniforms);
+    }
+    const beginMarker = '#include <begin_vertex>';
+    const wind = `
+      #include <begin_vertex>
+      float wtAnimeWindWeight = smoothstep(0.05, 1.25, position.y);
+      float wtAnimeWindWave = sin(wtAnimeTime * 1.45 + position.x * 1.7 + position.z * 1.25);
+      transformed.x += wtAnimeWindWave * wtAnimeWindStrength * wtAnimeWindWeight;
+      transformed.z += cos(wtAnimeTime * 1.12 + position.x * 1.05) * wtAnimeWindStrength * 0.38 * wtAnimeWindWeight;
+    `;
+    if (shader.vertexShader.includes(beginMarker) && state.windStrength > 0) {
+      shader.vertexShader = shader.vertexShader.replace(beginMarker, wind);
+    }
 
     const insertion = `
       uniform vec3 wtAnimeRimColor;
@@ -108,10 +131,12 @@ export function applyAnimeScene(THREE, root, quality = 'medium', palette = null)
     if (!object.isMesh || !object.material) return;
     meshes++;
     for (const material of materialList(object.material)) {
+      const foliage = object.userData?.wtWindFoliage === true || /leaf|foliage|grass|plant|crown/i.test(object.name || '');
       if (applyAnimeMaterial(THREE, material, {
         rimColor: sky.rim,
         rimStrength: preset.rim,
-        outlineStrength: preset.outline
+        outlineStrength: preset.outline,
+        windStrength: foliage ? (quality === 'low' ? 0.045 : 0.085) : 0
       })) materials++;
     }
   });
@@ -144,20 +169,27 @@ export function updateAnimeQuality(root, quality = 'medium', palette = null) {
 }
 
 export function applyRendererQuality(renderer, quality = 'medium', mobile = false) {
-  if (!renderer) return getAnimeQualityPreset(quality, mobile);
   const preset = getAnimeQualityPreset(quality, mobile);
+  if (!renderer) return preset;
   renderer.setPixelRatio(preset.pixelRatio);
   renderer.shadowMap.enabled = preset.shadows;
-  if (renderer.shadowMap.enabled && renderer.shadowMap.type !== undefined) {
-    renderer.shadowMap.type = THREE_PCfSoftShadowMap(renderer) ?? renderer.shadowMap.type;
-  }
   return preset;
 }
 
-function THREE_PCfSoftShadowMap(renderer) {
-  // The renderer does not expose its THREE namespace. Keep its current type;
-  // only the shadow enablement and resolution are quality-gated here.
-  return renderer.shadowMap.type;
+export function updateAnimeWind(root, timeSeconds = 0) {
+  if (!root) return 0;
+  const time = Number.isFinite(timeSeconds) ? timeSeconds : 0;
+  let updated = 0;
+  root.traverse(object => {
+    if (!object.isMesh || !object.material) return;
+    for (const material of materialList(object.material)) {
+      const state = material?.userData?.wtAnimeToon;
+      if (!state?.shader || state.windStrength <= 0) continue;
+      state.shader.uniforms.wtAnimeTime.value = time;
+      updated++;
+    }
+  });
+  return updated;
 }
 
 export function createAnimeSkyDome(THREE, scene, map = 'garden') {
