@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BIOME_LIGHTING, applyBiomeLighting, createMotionState, stepMotion, animateLocomotion, createSnakeBodyMesh, updateSnakeBodyMesh, snakeBodyRadius, animateSnakeHead, createSnakeHeadMaterials, stepPreviewSpin } from '../public/wild-trails-art.mjs';
+import { getAnimeQualityPreset, getAnimeSkyPalette, quantizeAnimeLight } from '../public/wild-trails-toon.mjs';
 
 test('six distinct biome lighting profiles with safe fallback',()=>{
   assert.deepEqual(Object.keys(BIOME_LIGHTING).sort(),['garden','home','kitchen','night','station','street']);
@@ -123,4 +124,39 @@ test('lobby preview spin is finite and clamps long or invalid frame deltas',()=>
   assert.equal(stepPreviewSpin(1,-1,.38),1);
   assert.equal(stepPreviewSpin(NaN,.02,.38),.02*.38);
   assert.ok(Number.isFinite(stepPreviewSpin(0,Infinity)));
+});
+
+
+test('anime quality presets remain bounded for desktop and mobile targets',()=>{
+  const low=getAnimeQualityPreset('low',true);
+  const medium=getAnimeQualityPreset('medium',false);
+  const high=getAnimeQualityPreset('high',true);
+  assert.equal(low.pixelRatio,.9);
+  assert.equal(low.shadows,false);
+  assert.equal(medium.pixelRatio,1.35);
+  assert.equal(medium.shadows,true);
+  assert.equal(high.pixelRatio,1.35);
+  assert.equal(high.shadowMapSize,1536);
+  assert.equal(getAnimeQualityPreset('unknown',false).name,'medium');
+});
+
+test('anime sky palettes cover every biome and safely fall back',()=>{
+  const maps=['garden','street','station','home','kitchen','night'];
+  for(const map of maps){
+    const palette=getAnimeSkyPalette(map);
+    assert.ok(Number.isInteger(palette.top));
+    assert.ok(Number.isInteger(palette.horizon));
+    assert.ok(Number.isInteger(palette.fog));
+    assert.ok(Number.isInteger(palette.rim));
+  }
+  assert.deepEqual(getAnimeSkyPalette('missing'),getAnimeSkyPalette('garden'));
+  assert.notEqual(getAnimeSkyPalette('night').top,getAnimeSkyPalette('garden').top);
+});
+
+test('anime light quantization is deterministic and handles invalid input',()=>{
+  assert.equal(quantizeAnimeLight(.1),.68);
+  assert.equal(quantizeAnimeLight(.4),.88);
+  assert.equal(quantizeAnimeLight(1.2),1.06);
+  assert.equal(quantizeAnimeLight(Number.NaN),.68);
+  assert.equal(quantizeAnimeLight(Number.POSITIVE_INFINITY),.68);
 });
