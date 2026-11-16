@@ -262,6 +262,14 @@
  <div class="result hidden" id="result"><section class="result-card"><div class="eyebrow">ROUND FINISHED</div><h2>انتهت الجولة</h2><p id="resultReason">حاول مرة أخرى وحسّن نتيجتك.</p><div class="result-score" id="resultScore">0</div><div class="result-actions"><button class="action primary" id="restartBtn">العب مرة أخرى</button><button class="action" id="resultMenuBtn">القائمة الرئيسية</button></div></section></div>
 </div>
 <script type="module">
+window.__WT_RUNTIME_ERRORS=[];
+window.addEventListener('error',event=>{
+  try{window.__WT_RUNTIME_ERRORS.push({message:event.message||'Error',file:event.filename||'',line:event.lineno||0,column:event.colno||0,stack:event.error?.stack||''})}catch{}
+},true);
+window.addEventListener('unhandledrejection',event=>{
+  try{window.__WT_RUNTIME_ERRORS.push({message:String(event.reason?.message||event.reason||'Unhandled rejection'),stack:event.reason?.stack||''})}catch{}
+});
+window.__WT_MP_BOOT='waiting';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const skins=[
@@ -3855,6 +3863,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 })();
 
 (function wildTrailsMultiplayer(){
+ window.__WT_MP_BOOT='entered';
  const MP_URL="wss://snake-evolution-mp.aamrabdelhay.workers.dev";
  const css=`
  #mpOpen{position:absolute;left:14px;top:14px;z-index:30;border:1px solid #d8b36b;background:linear-gradient(135deg,#263d2d,#15251b);color:#f8edcf;border-radius:13px;padding:11px 15px;font-weight:800;box-shadow:0 8px 24px #0007}
@@ -3879,7 +3888,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  #mpHud .mp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:900}#mpHud .mp-status{font-size:10px;color:#c8d0bd;margin:3px 0 7px}#mpHud .mp-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;border-top:1px solid #ffffff18}#mpHud .mp-row.me{color:#f1cc79;font-weight:900}
  @media(max-width:560px){#mpPanel .mp-card{padding:16px}#mpPanel .mp-modes{gap:5px}#mpPanel .mp-mode{padding:9px 3px}#mpPanel .mp-mode b{font-size:12px}#mpPanel .mp-mode small{font-size:9px}#mpOpen{top:8px;left:8px;padding:8px 10px;font-size:12px}}
  `;
- const style=document.createElement("style");style.textContent=css;document.head.appendChild(style);
+ const style=document.createElement("style");style.textContent=css;document.head.appendChild(style);window.__WT_MP_BOOT='style-ready';
  const openBtn=document.createElement("button");openBtn.id="mpOpen";openBtn.textContent="⚔️ Multiplayer";const head=document.querySelector("#overlay .modal-head");if(head){head.style.position="relative";head.appendChild(openBtn)}
  const panel=document.createElement("div");panel.id="mpPanel";panel.innerHTML=`
  <div class="mp-card" dir="rtl">
@@ -3909,8 +3918,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  </div>
  <p id="mpHint" style="margin:12px 0 0;font-size:11px">لا تبدأ الجولة إلا بعد دخول لاعبين والضغط على «أنا جاهز» من الاثنين.</p>
  </div>`;
- document.body.appendChild(panel);
- const hud=document.createElement("div");hud.id="mpHud";hud.innerHTML='<div class="mp-top"><span>🌐 ONLINE ARENA</span><span id="mpRoomLabel"></span></div><div class="mp-status" id="mpStatus">متصل</div><div id="mpBoard"></div>';document.body.appendChild(hud);
+ document.body.appendChild(panel);window.__WT_MP_BOOT='panel-ready';
+ const hud=document.createElement("div");hud.id="mpHud";hud.innerHTML='<div class="mp-top"><span>🌐 ONLINE ARENA</span><span id="mpRoomLabel"></span></div><div class="mp-status" id="mpStatus">متصل</div><div id="mpBoard"></div>';document.body.appendChild(hud);window.__WT_MP_BOOT='dom-ready';
  let chosen="race",room="",socket=null,myId="",lastSent=0,players=new Map(),remoteObjects=new Map(),mpActive=false,mpDead=false,countdownTimer=null,startTimer=null,hasStarted=false;
  const modeNames={race:"سباق",battle:"مين ياكل التاني",collect:"تجميع نقاط"};
  const randomRoom=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),v=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[v%32]).join("");
@@ -4008,6 +4017,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  const oldStartOpenGame=startOpenGame;startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&hasStarted&&player&&world){clearRemote();syncRemotePlayers([...players.values()]);lastSent=0;sendUpdate()}};
  const oldFinishRound=finishRound;finishRound=function(reason){if(mpActive&&hasStarted){sendUpdate();$mp("mpStatus").textContent="انتهت الجولة"}oldFinishRound(reason)};
  window.addEventListener("beforeunload",()=>{if(socket)try{socket.close()}catch{}});
+ window.__WT_MP_BOOT="complete";
 })();
 
 /* GitLab gameplay, art, animation, world-safety and lobby upgrades — reconciled to GitHub runtime. */
