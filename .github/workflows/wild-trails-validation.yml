@@ -1,4 +1,4 @@
-name: Wild Trails lobby validation
+name: Wild Trails gameplay and art validation
 
 on:
   push:
@@ -7,23 +7,27 @@ on:
       - feature/wild-trails-lobby-upgrades
     paths:
       - 'public/snake-evolution.html'
-      - 'public/wild-trails-biome-lighting.mjs'
+      - 'public/wild-trails-art.mjs'
       - 'scripts/validate-wild-trails-lobby.mjs'
+      - 'scripts/test-art.mjs'
       - '.github/workflows/wild-trails-validation.yml'
   pull_request:
     paths:
       - 'public/snake-evolution.html'
-      - 'public/wild-trails-biome-lighting.mjs'
+      - 'public/wild-trails-art.mjs'
       - 'scripts/validate-wild-trails-lobby.mjs'
+      - 'scripts/test-art.mjs'
       - '.github/workflows/wild-trails-validation.yml'
 
 jobs:
-  validate-lobby:
+  validate-game:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate game module syntax and lobby flow
+      - name: Validate integrated game features and syntax
         run: node scripts/validate-wild-trails-lobby.mjs
+      - name: Test procedural geometry and animation modules
+        run: node --test scripts/test-art.mjs
