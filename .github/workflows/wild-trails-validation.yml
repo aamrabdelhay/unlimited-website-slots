@@ -7,6 +7,7 @@ on:
       - feature/wild-trails-lobby-upgrades
     paths:
       - 'public/snake-evolution.html'
+      - 'public/wild-trails-biome-lighting.mjs'
       - 'scripts/validate-wild-trails-lobby.mjs'
       - '.github/workflows/wild-trails-validation.yml'
   pull_request:
