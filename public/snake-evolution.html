@@ -823,7 +823,7 @@ function updateOpen(dt,t){
  const inputLen=now<(player.userData.wtDizzyUntil||0)?0:Math.min(1,Math.hypot(ix,iy));
  if(inputLen>.10){const forwardX=-Math.sin(cameraYaw),forwardZ=-Math.cos(cameraYaw),rightX=Math.cos(cameraYaw),rightZ=-Math.sin(cameraYaw),vx=rightX*ix+forwardX*(-iy),vz=rightZ*ix+forwardZ*(-iy),target=Math.atan2(vx,-vz);let delta=Math.atan2(Math.sin(target-heading),Math.cos(target-heading));heading+=clamp(delta,-7.2*dt,7.2*dt)}
  const energyFactor=.34+.66*clamp((state.energy===undefined?100:state.energy)/100,0,1),boost=state.boostUntil>now?1.65:1,speed=6.3*boost*energyFactor*inputLen,nextX=player.position.x+Math.sin(heading)*speed*dt,nextZ=player.position.z-Math.cos(heading)*speed*dt;
- const worldEdgeHit=Math.abs(nextX)>105||Math.abs(nextZ)>105;if(worldEdgeHit&&inputLen>.16&&window.wtHandleImpact)window.wtHandleImpact(nextX-player.position.x,nextZ-player.position.z);if(worldEdgeHit){resolvedX=clamp(nextX,-104.2,104.2);resolvedZ=clamp(nextZ,-104.2,104.2)}
+ const worldEdgeHit=Math.abs(nextX)>105||Math.abs(nextZ)>105;if(worldEdgeHit&&inputLen>.16&&window.wtHandleImpact)window.wtHandleImpact(nextX-player.position.x,nextZ-player.position.z);
  let resolvedX=nextX,resolvedZ=nextZ;if(worldEdgeHit){resolvedX=clamp(nextX,-104.2,104.2);resolvedZ=clamp(nextZ,-104.2,104.2)}if(state.obstacles&&collidesAt(resolvedX,resolvedZ,.78)){if(inputLen>.16&&window.wtHandleImpact)window.wtHandleImpact(nextX-player.position.x,nextZ-player.position.z);const xFree=!collidesAt(resolvedX,player.position.z,.78),zFree=!collidesAt(player.position.x,resolvedZ,.78);if(xFree&&(!zFree||Math.abs(nextX-player.position.x)>=Math.abs(nextZ-player.position.z)))resolvedZ=player.position.z;else if(zFree)resolvedX=player.position.x;else{resolvedX=player.position.x;resolvedZ=player.position.z}}
  const traveled=Math.hypot(resolvedX-player.position.x,resolvedZ-player.position.z);player.userData.wtVisualSpeed=dt>0?traveled/dt:0;player.userData.wtVisualDt=dt;player.position.x=resolvedX;player.position.z=resolvedZ;player.rotation.y=heading;if(!path.length||player.position.distanceToSquared(path[0])>.000225){path.unshift(player.position.clone());if(path.length>360)path.length=360}
  updateTrailMesh(t);
@@ -5464,7 +5464,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     if(state.mode==='old'){
       const canvas=document.createElement('canvas');canvas.className='wt-map-stage-canvas';canvas.dataset.pixelMap=map.id;art.appendChild(canvas);drawPixelMap(canvas,map.id);
     }else{
-      const image=document.createElement('img');image.alt='معاينة خريطة '+map.name;image.dataset.mapPreview=map.id;const cardPreview=host.querySelector('.map-card[data-wt-map-id="'+map.id+'"] img[data-map-preview]');if(cardPreview?.src)image.src=cardPreview.src;art.appendChild(image);
+      const image=document.createElement('img');image.alt='معاينة خريطة '+map.name;image.dataset.mapPreview=map.id;const cardPreview=host.querySelector('.map-card[data-wt-map-id="'+map.id+'"] img[data-map-preview]');let previewAttempts=0;const syncMapPreview=()=>{if(!image.isConnected)return;if(cardPreview?.src&&cardPreview.complete&&cardPreview.naturalWidth>0){image.src=cardPreview.src;return}if(++previewAttempts<35)setTimeout(syncMapPreview,90)};syncMapPreview();art.appendChild(image);
     }
     const info=document.createElement('div');info.className='wt-map-stage-info';
     const kicker=document.createElement('span');kicker.className='wt-kicker';kicker.textContent=state.mode==='old'?'CLASSIC WORLD · PIXEL MAP':'OPEN WORLD · 3D SCENE';
