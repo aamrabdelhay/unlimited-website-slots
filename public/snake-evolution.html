@@ -150,6 +150,28 @@
  .creature-portrait{height:145px}
  .creature-info strong{font-size:15px}
 }
+
+/* Wild Trails lobby upgrades: clear progress, selected choices and confirmation */
+.wt-lobby-progress{display:flex;gap:8px;margin:5px 0 13px;position:relative;z-index:3}
+.wt-step-button{display:flex;align-items:center;gap:8px;min-width:0;flex:1;padding:9px 11px;border:1px solid #ffffff20;background:#1c3127;color:#b6c5b6;border-radius:9px;text-align:start}
+.wt-step-button strong{font-variant-numeric:tabular-nums;letter-spacing:.08em;color:#d8bd7c}
+.wt-step-button small{line-height:1.4;letter-spacing:0}
+.wt-step-button.current{border-color:#e5bf71;background:#bda46a;color:#14231a}
+.wt-step-button.current strong{color:#18271a}
+.wt-step-button.complete{border-color:#799b6f;color:#c3dabb}
+.wt-step-button:disabled{cursor:default;opacity:.78}
+.wt-choice-context{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 11px;color:#e6e4c9;font-size:12px}
+.wt-choice-context span{padding:6px 10px;background:#0b1b13;border:1px solid #a4b98d35;border-radius:7px}
+.wt-choice-context b{color:#e6c078}
+.wt-selection-note{color:#b7c8b3;font-size:11px;line-height:1.6;margin:0 0 10px}
+#continueBtn[hidden]{display:none!important}
+@media(max-width:700px){
+ .wt-step-button{padding:7px 5px;gap:4px;flex-direction:column;text-align:center}
+ .wt-step-button small{font-size:10px}
+ .wt-choice-context{font-size:10px;gap:5px}
+ .wt-choice-context span{padding:5px 7px}
+}
+
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
 </script>
@@ -3875,6 +3897,94 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
  const oldStartOpenGame=startOpenGame;startOpenGame=async function(){await oldStartOpenGame();if(mpActive&&hasStarted&&player&&world){clearRemote();syncRemotePlayers([...players.values()]);lastSent=0;sendUpdate()}};
  const oldFinishRound=finishRound;finishRound=function(reason){if(mpActive&&hasStarted){sendUpdate();$mp("mpStatus").textContent="انتهت الجولة"}oldFinishRound(reason)};
  window.addEventListener("beforeunload",()=>{if(socket)try{socket.close()}catch{}});
-})();</script>
+})();
+/* Lobby flow improvements ported independently from the GitLab feature work.
+   Character cards now select; the explicit primary action starts the round. */
+(function wildTrailsLobbyFlowUpgrade(){
+  const modal=$('overlay')?.querySelector('.modal');
+  const labels=['المود','الخريطة','الشخصية'];
+  function paintProgress(step){
+    if(!modal)return;
+    modal.querySelectorAll(':scope > .wt-lobby-progress').forEach(node=>node.remove());
+    $('lobbyChoiceSummary')?.remove();
+    const nav=document.createElement('nav');
+    nav.className='wt-lobby-progress';
+    nav.setAttribute('aria-label','خطوات تجهيز المغامرة');
+    labels.forEach((label,index)=>{
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='wt-step-button'+(step===index?' current':'')+(step>index?' complete':'');
+      button.disabled=index>step;
+      button.innerHTML='<strong>0'+(index+1)+'</strong><small>'+label+'</small>';
+      if(step===index)button.setAttribute('aria-current','step');
+      button.addEventListener('click',()=>{if(index<=state.step)showStep(index)});
+      nav.appendChild(button);
+    });
+    modal.insertBefore(nav,$('stepContent'));
+    const summary=document.createElement('div');
+    summary.id='lobbyChoiceSummary';
+    summary.className='wt-choice-context';
+    const chip=value=>{const node=document.createElement('span');node.textContent=value;return node};
+    summary.appendChild(chip(step===0?'اختر أسلوب اللعب':(state.mode==='old'?'OLD IS GOLD':'OPEN MAP')));
+    if(step>0){const map=maps.find(item=>item.id===state.map);if(map)summary.appendChild(chip('الخريطة: '+map.name))}
+    if(step===2)summary.appendChild(chip('الرصيد: '+state.coins.toLocaleString()+' ذهب'));
+    $('stepContent').before(summary);
+  }
+  function updateActions(step){
+    const button=$('continueBtn');
+    button.hidden=step===0;
+    button.disabled=false;
+    if(step===1)button.textContent='اختيار الشخصية';
+    if(step===2){
+      button.textContent=state.shopOnly?'العودة للعبة':'انطلق إلى العالم';
+      button.disabled=!state.shopOnly&&!owned.includes(state.skin);
+    }
+    if(step===0)button.textContent='اختر مودًا للمتابعة';
+  }
+  const originalShowStep=showStep;
+  showStep=function(step){
+    originalShowStep(step);
+    paintProgress(step);
+    updateActions(step);
+    if(step===1)$('stepHint').textContent='اختر الساحة ثم انتقل إلى اختيار رفيقك.';
+    if(step===2)$('stepHint').textContent=state.shopOnly?'اختر شخصية للشراء، ثم اضغط العودة للعبة.':'اختر شخصيتك، ثم اضغط «انطلق إلى العالم» لبدء الجولة.';
+  };
+  $('stepContent').addEventListener('click',event=>{
+    const card=event.target.closest('.creature-card');
+    if(!card)return;
+    const skinId=card.querySelector('[data-skin]')?.dataset.skin;
+    const index=skins.findIndex(item=>item.id===skinId);
+    if(index<0)return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    if(!owned.includes(index)){
+      const price=skins[index].price;
+      if(state.coins<price){toast('تحتاج '+(price-state.coins).toLocaleString()+' عملة إضافية');return}
+      state.coins-=price;
+      owned.push(index);
+      updateHud();
+      toast('تم فتح '+skins[index].name);
+    }
+    state.skin=index;
+    showStep(2);
+  },true);
+  $('continueBtn').onclick=()=>{
+    if(state.step===1){showStep(2);return}
+    if(state.step!==2)return;
+    if(state.shopOnly){
+      state.shopOnly=false;
+      $('overlay').classList.add('hidden');
+      state.paused=false;
+      startLoop();
+      return;
+    }
+    if(!owned.includes(state.skin)){toast('افتح الشخصية أولًا قبل بدء الجولة');return}
+    startGame();
+  };
+  showStep(state.step);
+})();
+
+</script>
 </body>
 </html>
