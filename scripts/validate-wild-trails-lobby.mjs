@@ -3,9 +3,13 @@ import assert from 'node:assert/strict';
 import { BIOME_LIGHTING } from '../public/wild-trails-art.mjs';
 
 const html = fs.readFileSync('public/snake-evolution.html', 'utf8');
-const moduleMatch = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
-assert.ok(moduleMatch, 'Game module script must exist');
-new Function(moduleMatch[1]);
+const moduleOpen = '<script type="module">';
+const moduleStart = html.indexOf(moduleOpen);
+assert.notEqual(moduleStart, -1, 'Game module script must exist');
+const codeStart = moduleStart + moduleOpen.length;
+const moduleEnd = html.indexOf('</script>', codeStart);
+assert.notEqual(moduleEnd, -1, 'Game module script must close');
+new Function(html.slice(codeStart, moduleEnd));
 
 const required = [
   ['three-step lobby navigation', '.wt-lobby-progress'],
