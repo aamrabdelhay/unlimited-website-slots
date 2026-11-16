@@ -388,6 +388,16 @@ let wtArt=null,wtToon=null,wtSkyDome=null;
 let wtQuality='medium';
 try{const stored=localStorage.getItem('wild-quality');if(['low','medium','high'].includes(stored))wtQuality=stored}catch{}
 const wtMobileQuality=()=>matchMedia('(max-width: 700px)').matches;
+function wtApplyShadowQuality(){
+ if(!scene||!wtToon)return;
+ const preset=wtToon.getAnimeQualityPreset(wtQuality,wtMobileQuality());
+ scene.traverse(o=>{
+  if(!o.isDirectionalLight||!o.castShadow||!o.shadow)return;
+  o.shadow.mapSize.set(preset.shadowMapSize,preset.shadowMapSize);
+  if(o.shadow.map){o.shadow.map.dispose();o.shadow.map=null}
+  o.shadow.camera?.updateProjectionMatrix?.();
+ });
+}
 function wtApplyAnimeStyle(){
  if(!THREE||!scene||!world||!wtToon)return;
  const palette=wtToon.getAnimeSkyPalette(state.map);
@@ -397,14 +407,14 @@ function wtApplyAnimeStyle(){
  if(scene.fog?.color)scene.fog.color.setHex(palette.fog);
  if(scene.background?.setHex)scene.background.setHex(palette.top);
  if(wtArt?.applyBiomeLighting)wtArt.applyBiomeLighting(scene,renderer,state.map);
- if(renderer){wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());resize3D()}
+ if(renderer){wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());wtApplyShadowQuality();resize3D()}
 }
 function wtSetQuality(value){
  wtQuality=['low','medium','high'].includes(value)?value:'medium';
  safeSave('wild-quality',wtQuality);
  const palette=wtToon?.getAnimeSkyPalette(state.map);
  if(wtToon&&world)wtToon.updateAnimeQuality(world,wtQuality,palette);
- if(wtToon&&renderer){wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());resize3D()}
+ if(wtToon&&renderer){wtToon.applyRendererQuality(renderer,wtQuality,wtMobileQuality());wtApplyShadowQuality();resize3D()}
  if(scene?.fog?.color&&palette)scene.fog.color.setHex(palette.fog);
  const select=$('wtQuality');if(select&&select.value!==wtQuality)select.value=wtQuality;
 }
@@ -420,8 +430,8 @@ async function loadPlayerModel(){
  try{const gltf=await loadGameModel(url);if(!state.started||state.mode==='old'||player!==owner||state.skin!==selected)return;
   const model=fitAsset(SkeletonUtils.clone(gltf.scene),skin.id==='fish'?1.35:1.65);model.rotation.y=Math.PI;model.position.z=-.18;
   model.traverse(o=>{o.userData.sharedAsset=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=true;if(/leaf|foliage|grass|plant|crown/i.test(o.name||''))o.userData.wtWindFoliage=true}});
-  if(wtToon)wtToon.applyAnimeScene(THREE,model,wtQuality,wtToon.getAnimeSkyPalette(state.map));
   if(creatureHead?.parent)creatureHead.parent.remove(creatureHead);owner.add(model);creatureHead=model;
+  if(wtToon&&world)wtToon.applyAnimeScene(THREE,world,wtQuality,wtToon.getAnimeSkyPalette(state.map));
   if(gltf.animations?.length){const mixer=new THREE.AnimationMixer(model),master=gltf.animations[0],idle=THREE.AnimationUtils.subclip(master,'idle',0,30,24),walk=THREE.AnimationUtils.subclip(master,'walk',90,120,24),idleAction=mixer.clipAction(idle),walkAction=mixer.clipAction(walk);idleAction.play();animationMixers.push({mixer,idleAction,walkAction,active:'idle'})}
  }catch(e){console.warn('Player model fallback retained',e)}
 }
@@ -435,8 +445,9 @@ async function loadEnvironmentAssets(){
  const kinds=[...new Set(placements.map(p=>p[0]))];
  await Promise.all(kinds.map(async kind=>{try{const gltf=await loadGameModel(GAME_ASSETS.environment[kind]);if(world!==targetWorld)return;
   for(const [k,x,z,size] of placements){if(k!==kind)continue;const root=fitAsset(SkeletonUtils.clone(gltf.scene),size);root.position.set(x,0,z);root.rotation.y=(x+z)*.013;root.traverse(o=>{o.userData.sharedAsset=true;if(o.isMesh){o.castShadow=false;o.receiveShadow=true;if(/leaf|foliage|grass|plant|crown/i.test(o.name||''))o.userData.wtWindFoliage=true}});
-  if(wtToon)wtToon.applyAnimeScene(THREE,root,wtQuality,wtToon.getAnimeSkyPalette(state.map));
-  targetWorld.add(root);obstacles.push({x,z,r:Math.max(.9,size*.42),source:'asset'})}
+  targetWorld.add(root);
+  if(wtToon&&world)wtToon.applyAnimeScene(THREE,world,wtQuality,wtToon.getAnimeSkyPalette(state.map));
+  obstacles.push({x,z,r:Math.max(.9,size*.42),source:'asset'})}
  }catch(e){console.warn('Environment asset skipped',kind,e)}}));
 }
 
@@ -5853,6 +5864,22 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 
 ;
 
+
+/* Keep procedural leaves eligible for the lightweight wind vertex shader. */
+(function wtTagWindFoliage(){
+ const originalMakeTree=makeTree;
+ makeTree=function(...args){
+  const first=world?.children?.length||0;
+  const result=originalMakeTree.apply(this,args);
+  if(world?.children){
+   for(let i=first;i<world.children.length;i++){
+    const object=world.children[i];
+    if(object?.isMesh&&object.geometry?.type==='SphereGeometry')object.userData.wtWindFoliage=true;
+   }
+  }
+  return result;
+ };
+})();
 </script>
 </body>
 </html>
