@@ -46,6 +46,8 @@ function materialList(material) {
   return Array.isArray(material) ? material : [material];
 }
 
+const ANIME_WIND_STATE = new WeakMap();
+
 export function applyAnimeMaterial(THREE, material, options = {}) {
   if (!THREE || !material || material.userData?.wtAnimeToon || material.isMeshBasicMaterial || material.isShaderMaterial) {
     return false;
@@ -126,6 +128,7 @@ export function applyAnimeScene(THREE, root, quality = 'medium', palette = null)
   const sky = palette || getAnimeSkyPalette('garden');
   let materials = 0;
   let meshes = 0;
+  const windMaterials = new Set();
 
   root.traverse(object => {
     if (!object.isMesh || !object.material) return;
@@ -138,9 +141,12 @@ export function applyAnimeScene(THREE, root, quality = 'medium', palette = null)
         outlineStrength: preset.outline,
         windStrength: foliage ? (quality === 'low' ? 0.045 : 0.085) : 0
       })) materials++;
+      const state = material?.userData?.wtAnimeToon;
+      if (state?.windStrength > 0) windMaterials.add(state);
     }
   });
 
+  ANIME_WIND_STATE.set(root, [...windMaterials]);
   return { materials, meshes };
 }
 
@@ -179,16 +185,13 @@ export function applyRendererQuality(renderer, quality = 'medium', mobile = fals
 export function updateAnimeWind(root, timeSeconds = 0) {
   if (!root) return 0;
   const time = Number.isFinite(timeSeconds) ? timeSeconds : 0;
+  const states = ANIME_WIND_STATE.get(root) || [];
   let updated = 0;
-  root.traverse(object => {
-    if (!object.isMesh || !object.material) return;
-    for (const material of materialList(object.material)) {
-      const state = material?.userData?.wtAnimeToon;
-      if (!state?.shader || state.windStrength <= 0) continue;
-      state.shader.uniforms.wtAnimeTime.value = time;
-      updated++;
-    }
-  });
+  for (const state of states) {
+    if (!state?.shader || state.windStrength <= 0) continue;
+    state.shader.uniforms.wtAnimeTime.value = time;
+    updated++;
+  }
   return updated;
 }
 
