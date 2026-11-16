@@ -50,3 +50,16 @@ jobs:
         run: npm run typecheck
       - name: Test authoritative multiplayer rules
         run: npm test
+
+  build-next-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install application dependencies
+        run: npm ci
+      - name: Run the Vercel production build command
+        run: npm run build
