@@ -1,0 +1,27 @@
+name: Wild Trails lobby validation
+
+on:
+  push:
+    branches:
+      - main
+      - feature/wild-trails-lobby-upgrades
+    paths:
+      - 'public/snake-evolution.html'
+      - 'scripts/validate-wild-trails-lobby.mjs'
+      - '.github/workflows/wild-trails-validation.yml'
+  pull_request:
+    paths:
+      - 'public/snake-evolution.html'
+      - 'scripts/validate-wild-trails-lobby.mjs'
+      - '.github/workflows/wild-trails-validation.yml'
+
+jobs:
+  validate-lobby:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate game module syntax and lobby flow
+        run: node scripts/validate-wild-trails-lobby.mjs
