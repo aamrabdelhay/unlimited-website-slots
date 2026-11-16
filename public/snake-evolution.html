@@ -5571,10 +5571,26 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     const map=maps.find(x=>x.id===state.map)||maps[0],stage=document.createElement('section');
     stage.id='wtMapStage';stage.className='wt-map-stage';
     const art=document.createElement('div');art.className='wt-map-stage-art';
+    let syncSelectedMapImage=()=>{};
     if(state.mode==='old'){
       const canvas=document.createElement('canvas');canvas.className='wt-map-stage-canvas';canvas.dataset.pixelMap=map.id;art.appendChild(canvas);drawPixelMap(canvas,map.id);
     }else{
-      const image=document.createElement('img');image.alt='معاينة خريطة '+map.name;image.dataset.mapPreview=map.id;const cardPreview=host.querySelector('.map-card[data-wt-map-id="'+map.id+'"] img[data-map-preview]');let previewAttempts=0;const syncMapPreview=()=>{if(!image.isConnected)return;if(cardPreview?.src&&cardPreview.complete&&cardPreview.naturalWidth>0){image.src=cardPreview.src;return}if(++previewAttempts<35)setTimeout(syncMapPreview,90)};syncMapPreview();art.appendChild(image);
+      const image=document.createElement('img');
+      image.alt='';image.hidden=true;image.dataset.mapPreview=map.id;
+      let previewAttempts=0;
+      image.addEventListener('load',()=>{image.hidden=false;image.alt='معاينة خريطة '+map.name});
+      image.addEventListener('error',()=>{image.hidden=true});
+      art.appendChild(image);
+      syncSelectedMapImage=()=>{
+        if(!image.isConnected)return;
+        const cardPreview=host.querySelector('.map-card[data-wt-map-id="'+map.id+'"] img[data-map-preview]');
+        const source=cardPreview?.getAttribute('src');
+        if(source&&source.startsWith('data:image/')){
+          if(image.getAttribute('src')!==source)image.src=source;
+          return;
+        }
+        if(++previewAttempts<90)setTimeout(syncSelectedMapImage,100);
+      };
     }
     const info=document.createElement('div');info.className='wt-map-stage-info';
     const kicker=document.createElement('span');kicker.className='wt-kicker';kicker.textContent=state.mode==='old'?'CLASSIC WORLD · PIXEL MAP':'OPEN WORLD · 3D SCENE';
@@ -5585,6 +5601,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     const obstacles=document.createElement('span');obstacles.textContent=state.obstacles?'العوائق مفعّلة':'العوائق غير مفعّلة';
     chips.append(type,obstacles);info.append(kicker,title,description,chips);stage.append(art,info);
     host.parentElement.insertBefore(stage,host);
+    syncSelectedMapImage();
   }
   function renderMaps(){
     const host=$('stepContent'),cards=[...host.querySelectorAll('.map-card')];

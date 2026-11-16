@@ -18,7 +18,7 @@ const required = [
   ['three-step lobby navigation', '.wt-lobby-progress'],
   ['mode/map/character selection', 'wildTrailsLobbyExperience'],
   ['character selection before round start', 'انطلق إلى العالم'],
-  ['selected 3D map preview', 'syncMapPreview'],
+  ['selected 3D map preview', 'syncSelectedMapImage();'],
   ['responsive 3D map detail panel', '.wt-map-stage{display:grid'],
   ['selected character preview surface', '.wt-selected-companion{display:grid'],
   ['pixel map canvases', '#stepContent .wt-pixel-map'],
