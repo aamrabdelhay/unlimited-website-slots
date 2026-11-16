@@ -832,7 +832,7 @@ function updateOpen(dt,t){
  const distance=9.6,camPos=new THREE.Vector3(player.position.x+Math.sin(cameraYaw)*distance,2.8+cameraPitch*5.1,player.position.z+Math.cos(cameraYaw)*distance);camera.position.lerp(camPos,1-Math.pow(.001,dt));camera.lookAt(player.position.x,player.position.y+1,player.position.z);
  for(let i=foodItems.length-1;i>=0;i--){const f=foodItems[i];f.rotation.y+=dt*1.6;f.position.y=.55+Math.sin(t*.003+f.userData.phase)*.12;let d=Math.hypot(f.position.x-player.position.x,f.position.z-player.position.z);
   if(state.magnetUntil>now&&d<13){f.position.lerp(player.position,.055);d=f.position.distanceTo(player.position)}
-  if(d<1.25){const type=f.userData.type;state.score+=f.userData.value;state.coins+=f.userData.value;if(type==='speed'){state.boostUntil=now+6500;toast('التقطت السرعة — اندفاع مؤقت')}if(type==='shield'){state.shieldUntil=now+8000;toast('التقطت الدرع — حماية مؤقتة')}if(type==='magnet'){state.magnetUntil=now+10000;toast('التقطت المغناطيس — الطعام ينجذب إليك')}
+  if(d<1.25){const type=f.userData.type;state.score+=f.userData.value;window.wtRecordFood(type,f.userData.value);if(type==='speed'){state.boostUntil=now+6500;toast('التقطت السرعة — اندفاع مؤقت')}if(type==='shield'){state.shieldUntil=now+8000;toast('التقطت الدرع — حماية مؤقتة')}if(type==='magnet'){state.magnetUntil=now+10000;toast('التقطت المغناطيس — الطعام ينجذب إليك')}
    world.remove(f);f.traverse?.(part=>{if(part.geometry)part.geometry.dispose();if(part.material)part.material.dispose()});if(f.geometry)f.geometry.dispose();if(f.material)f.material.dispose();foodItems.splice(i,1);trailRingCount=Math.min(56,trailRingCount+2);rebuildTrailMesh();updateTrailMesh(t);updateHud()}
  }
  if(t-lastFood>1900&&foodItems.length<16){makeFood();lastFood=t}
