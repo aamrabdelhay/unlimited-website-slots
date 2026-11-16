@@ -10,7 +10,7 @@ const codeStart = moduleStart + moduleOpen.length;
 const moduleEnd = html.indexOf('</script>', codeStart);
 assert.notEqual(moduleEnd, -1, 'Game module script must close');
 new Function(html.slice(codeStart, moduleEnd));
-const brokenIifeBoundary = /\\}\\)\\(\\)(?:\\s|\\/\\*[\\s\\S]*?\\*\\/|\\/\\/[^\\n]*\\n)*\\(\\s*function\\s+[\\w$]+\\s*\\(/;
+const brokenIifeBoundary = /\}\)\(\)(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*\(\s*function\s+[\w$]+\s*\(/;
 assert.ok(!brokenIifeBoundary.test(html), 'Adjacent game IIFEs must be separated by a statement terminator so runtime initialization can continue.');
 
 
