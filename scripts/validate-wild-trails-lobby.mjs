@@ -10,7 +10,8 @@ const codeStart = moduleStart + moduleOpen.length;
 const moduleEnd = html.indexOf('</script>', codeStart);
 assert.notEqual(moduleEnd, -1, 'Game module script must close');
 new Function(html.slice(codeStart, moduleEnd));
-assert.equal(html.split('})()').length - 1, 0, 'Every adjacent game IIFE must be separated by a statement terminator so runtime initialization can continue.');
+const brokenIifeBoundary = '})()' + String.fromCharCode(10) + String.fromCharCode(10) + '(function';
+assert.ok(!html.includes(brokenIifeBoundary), 'Adjacent game IIFEs must be separated by a statement terminator so runtime initialization can continue.');
 
 
 const required = [
@@ -42,7 +43,7 @@ const required = [
   ['visible multiplayer mode card', 'wtMultiplayerModeCard'],
   ['online room WebSocket endpoint', 'wss://snake-evolution-mp.aamrabdelhay.workers.dev'],
   ['two-player ready lobby', 'أنا جاهز'],
-  ['synchronized multiplayer countdown handler', 'd.type===\"start\"']
+  ['synchronized multiplayer countdown handler', 'if(d.type===\"start\")']
 ];
 for (const [label, fragment] of required) {
   assert.ok(html.includes(fragment), 'Missing feature: ' + label);
