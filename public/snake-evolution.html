@@ -3420,41 +3420,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     creatureHead.position.y+=((moving?.035:.012)-creatureHead.position.y)*.16;
   };
 
-  // A refined locomotive with a weighted chassis, inset window bays, bogies,
-  // wheel hubs, door divisions, headlights and warm passenger lighting.
-  buildPassingTrain=function(){
-    const g=new THREE.Group(),body=material(0x315b63,.38,.22),lower=material(0x29373a,.62,.4),
-      roof=material(0xc1b79f,.48,.22),glass=new THREE.MeshStandardMaterial({color:0x8bbac1,roughness:.16,metalness:.18,emissive:0x18363c,emissiveIntensity:.22}),
-      stripe=material(0xd4ae64,.42,.35),rubber=material(0x1a2225,.72,.12);
-    const add=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
-    for(let car=0;car<3;car++){
-      const z=(car-1)*12.1;
-      add(new THREE.BoxGeometry(4.75,.48,11.65),lower,0,.53,z);
-      add(new THREE.BoxGeometry(4.72,2.30,11.25),body,0,1.86,z);
-      add(new THREE.BoxGeometry(4.62,.20,11.1),roof,0,3.12,z);
-      add(new THREE.BoxGeometry(4.78,.16,11.0),stripe,0,1.02,z);
-      for(const side of [-1,1])for(let j=-1;j<=1;j++){
-        add(new THREE.BoxGeometry(.055,.82,2.25),glass,side*2.39,2.14,z+j*3.12);
-        add(new THREE.BoxGeometry(.08,.94,.10),lower,side*2.43,2.14,z+j*3.12-1.17);
-        add(new THREE.BoxGeometry(.08,.94,.10),lower,side*2.43,2.14,z+j*3.12+1.17);
-      }
-      add(new THREE.BoxGeometry(.12,1.38,.10),lower,0,2.05,z+5.64);
-      if(car===2){
-        const nose=add(new THREE.SphereGeometry(1,24,18),body,0,1.64,z+5.34);nose.scale.set(2.34,.96,.78);
-        add(new THREE.BoxGeometry(2.5,.95,.09),glass,0,2.45,z+5.92);
-        for(const side of [-1,1])add(new THREE.SphereGeometry(.13,14,10),new THREE.MeshBasicMaterial({color:0xffe7a2}),side*1.62,1.38,z+5.99);
-      }
-      for(const bogieZ of [-4,4]){
-        add(new THREE.BoxGeometry(3.65,.32,1.55),lower,0,.44,z+bogieZ);
-        for(const side of [-1,1]){
-          const wheel=add(new THREE.CylinderGeometry(.43,.43,.25,20),rubber,side*1.92,.48,z+bogieZ);wheel.rotation.z=Math.PI/2;
-          const hub=add(new THREE.CylinderGeometry(.16,.16,.27,16),stripe,side*2.06,.48,z+bogieZ);hub.rotation.z=Math.PI/2;
-        }
-      }
-    }
-    return g;
-  };
-
+  // Train geometry remains owned by the existing station builder; this V4
+  // visual installer deliberately avoids assigning into that builder's private scope.
   // Station food appears on the two walkable platforms, not beneath a train.
   const previousMakeFood=makeFood;
   makeFood=function(){
@@ -5736,7 +5703,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     else if(state.step===2&&state.mode==='old')renderCreaturePreviews();
   });
   showStep(state.step);
-})()
+})();
 
 /* Lobby flow improvements ported independently from the GitLab feature work.
    Character cards now select; the explicit primary action starts the round. */
