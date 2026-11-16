@@ -3195,6 +3195,15 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
    WILD TRAILS V4 — CENEMATIC STYLIZED REALISM AND BIOME-SPECIFIC PRESENTATION
    ------------------------------------------------------------------------- */
 (function wtVisualDirectionV4(){
+  // Three.js is intentionally lazy-loaded. Install V4 geometry only after the
+  // library resolves, otherwise this optional art pass can abort every later
+  // lobby/progression/multiplayer initializer while THREE is still null.
+  let installed=false;
+  const installV4=()=>{
+    if(installed||!THREE)return;
+    installed=true;
+    try{
+
   const V=(x,y,z)=>new THREE.Vector3(x,y,z);
   const material=(color,rough=.8,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
   function deformCanopy(seed){
@@ -3620,8 +3629,22 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       return url;
     }catch(e){console.warn("3D creature stage render failed",skin.id,e);return null}
   };
-  // Refresh the opening screen after all V4 renderers have replaced the placeholders.
-  showStep(0);updateHud();
+  // Refresh only when the lobby is still active; never reopen the lobby while starting a round.
+  if(!state.started&&!state.paused)showStep(state.step||0);
+  updateHud();
+    }catch(error){
+      const detail={message:'Wild Trails V4 visual installation failed: '+String(error?.message||error),stack:error?.stack||''};
+      try{window.__WT_RUNTIME_ERRORS?.push(detail)}catch{}
+      console.error(detail.message,error);
+    }
+  };
+  const originalLoadThree=loadThree;
+  loadThree=function(){
+    return originalLoadThree().then(module=>{
+      if(module)installV4();
+      return module;
+    });
+  };
 })();
 
 
