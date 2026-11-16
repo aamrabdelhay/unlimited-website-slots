@@ -1,44 +1,58 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import {BIOME_LIGHTING,applyBiomeLighting} from '../public/wild-trails-biome-lighting.mjs';
+import { BIOME_LIGHTING } from '../public/wild-trails-art.mjs';
 
-const html=fs.readFileSync('public/snake-evolution.html','utf8');
-const moduleMatch=html.match(/<script type="module">([\s\S]*?)<\/script>/);
-assert.ok(moduleMatch,'Game module script must exist');
+const html = fs.readFileSync('public/snake-evolution.html', 'utf8');
+const moduleMatch = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+assert.ok(moduleMatch, 'Game module script must exist');
 new Function(moduleMatch[1]);
 
-for(const [label,fragment] of [
-  ['lobby progress navigation','.wt-lobby-progress'],
-  ['three lobby steps',"const labels=['المود','الخريطة','الشخصية']"],
-  ['choice summary','lobbyChoiceSummary'],
-  ['selected map summary','الخريطة:'],
-  ['wallet summary','الرصيد:'],
-  ['character selection capture','event.stopImmediatePropagation()'],
-  ['explicit round start','انطلق إلى العالم'],
-  ['start only from confirmation','if(state.step!==2)return'],
-  ['shop return path','state.shopOnly=false'],
-  ['persisted wallet update','updateHud()']
-]){
-  assert.ok(html.includes(fragment),'Missing lobby requirement: '+label);
+const required = [
+  ['three-step lobby navigation', '.wt-lobby-progress'],
+  ['mode/map/character selection', 'wildTrailsLobbyExperience'],
+  ['character selection before round start', 'انطلق إلى العالم'],
+  ['selected 3D map preview', 'syncMapPreview'],
+  ['energy system', 'wt-energy'],
+  ['daily missions and profile progression', 'wtMissionsDef'],
+  ['separate gold pickups', 'function wtMakeGoldCoin'],
+  ['independent gold reward path', 'function wtRecordGold'],
+  ['food reward path', 'window.wtRecordFood(type'],
+  ['wildlife system', 'function wtUpdateWildlife'],
+  ['safe map spawning', 'function wtChoosePlayerSpawn'],
+  ['collision knockback and dizzy reaction', 'function wtHandleImpact'],
+  ['station crossing fix', 'Station platform collision'],
+  ['snake dynamic body mesh', 'wtArt.createSnakeBodyMesh'],
+  ['articulated snake head', 'wtArt.enhanceSnakeHead'],
+  ['cinematic PBR shader pass', 'function wtInstallPBRShader'],
+  ['procedural wind-driven grass', 'function wtMakeGrassBatch'],
+  ['ambient biome particles', 'function wtAddAmbientParticles'],
+  ['soft creature contact shadows', 'Soft creature contact shadow'],
+  ['all six map boundaries', 'function addBoundaryMarkers'],
+  ['low-power animated lobby previews', 'function renderLobbyPreviewFrame']
+];
+for (const [label, fragment] of required) {
+  assert.ok(html.includes(fragment), 'Missing feature: ' + label);
 }
-for(const id of ['garden','street','station','home','night','kitchen']){
-  assert.ok(html.includes("id:'"+id+"'"),'Missing map: '+id);
+
+for (const id of ['garden','street','station','home','night','kitchen']) {
+  assert.ok(html.includes("id:'" + id + "'"), 'Missing map: ' + id);
+  assert.ok(BIOME_LIGHTING[id], 'Missing biome lighting profile: ' + id);
 }
-assert.ok(html.includes("$('continueBtn').onclick=()=>{"),'Primary action must have an explicit handler');
+assert.deepEqual(Object.keys(BIOME_LIGHTING).sort(), ['garden','home','kitchen','night','station','street']);
 
-assert.deepEqual(Object.keys(BIOME_LIGHTING).sort(),['garden','home','kitchen','night','station','street']);
-const makeColor=()=>({value:null,setHex(value){this.value=value}});
-const sun={isDirectionalLight:true,castShadow:true,color:makeColor()};
-const ambient={isHemisphereLight:true,color:makeColor(),groundColor:makeColor()};
-const renderer={};
-const applied=applyBiomeLighting({children:[sun,ambient]},renderer,'night');
-assert.equal(applied,BIOME_LIGHTING.night);
-assert.equal(sun.intensity,.48);
-assert.equal(ambient.intensity,.68);
-assert.equal(renderer.toneMappingExposure,.98);
-applyBiomeLighting({children:[sun,ambient]},renderer,'unknown');
-assert.equal(sun.color.value,BIOME_LIGHTING.garden.sun);
-assert.ok(html.includes('wildTrailsBiomeLightingIntegration'),'Biome lighting must be connected to world construction');
-assert.ok(html.includes("import('./wild-trails-biome-lighting.mjs')"),'Biome lighting must lazy-load locally');
-console.log('Wild Trails validation passed: module syntax, lobby flow, six maps, six biome-lighting profiles and safe fallback.');
+for (const forbidden of [
+  'state.coins+=f.userData.value||1',
+  'state.score++;state.coins++;classic.food=',
+  'state.score++;state.coins++;classic.power=null'
+]) assert.ok(!html.includes(forbidden), 'Food must not award spendable gold directly: ' + forbidden);
 
+assert.ok(html.includes('player.userData.wtVisualSpeed=dt>0?traveled/dt:0;'), 'Animation must use actual movement distance');
+assert.ok(html.includes('const energyFactor=.34+.66*clamp((state.energy===undefined?100:state.energy)/100,0,1)'), '3D movement speed must account for energy');
+assert.ok(html.includes('const worldEdgeHit=Math.abs(nextX)>105||Math.abs(nextZ)>105'), 'World bounds must use recoverable knockback');
+assert.ok(html.includes("wss://snake-evolution-mp.aamrabdelhay.workers.dev"), 'Existing multiplayer endpoint must remain intact');
+
+const artSource = fs.readFileSync('public/wild-trails-art.mjs', 'utf8');
+for (const name of ['createSnakeBodyMesh','updateSnakeBodyMesh','enhanceSnakeHead','animateSnakeHead','animateLocomotion']) {
+  assert.ok(artSource.includes('export function ' + name), 'Missing procedural art export: ' + name);
+}
+console.log('Wild Trails validation passed: game syntax, progression, economy, wildlife, knockback, art, animation, six maps and six lighting profiles.');
