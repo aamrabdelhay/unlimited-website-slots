@@ -24,6 +24,7 @@ const required = [
   ['wildlife system', 'function wtUpdateWildlife'],
   ['safe map spawning', 'function wtChoosePlayerSpawn'],
   ['collision knockback and dizzy reaction', 'function wtHandleImpact'],
+  ['indoor camera clipping protection', 'camPos.x=clamp(camPos.x,-32.5,32.5)'],
   ['station pedestrian crossing', 'const deck=new THREE.Mesh(new THREE.BoxGeometry(29,.16,5.2)'],
   ['snake dynamic body mesh', 'wtArt.createSnakeBodyMesh'],
   ['articulated snake head', 'wtArt.enhanceSnakeHead'],
