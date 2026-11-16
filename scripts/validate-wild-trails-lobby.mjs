@@ -10,7 +10,7 @@ const codeStart = moduleStart + moduleOpen.length;
 const moduleEnd = html.indexOf('</script>', codeStart);
 assert.notEqual(moduleEnd, -1, 'Game module script must close');
 new Function(html.slice(codeStart, moduleEnd));
-assert.ok(!html.includes('})()\\n\\n(function'), 'Every adjacent game IIFE must be separated by a statement terminator so runtime initialization can continue.');
+assert.equal(html.split('})()').length - 1, 0, 'Every adjacent game IIFE must be separated by a statement terminator so runtime initialization can continue.');
 
 
 const required = [
