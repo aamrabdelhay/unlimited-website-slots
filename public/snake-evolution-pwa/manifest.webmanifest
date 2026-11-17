@@ -1,0 +1,21 @@
+{
+  "id": "/snake-evolution.html",
+  "name": "Wild Trails — Snake Evolution",
+  "short_name": "Wild Trails",
+  "description": "لعبة الثعبان Wild Trails: مود كلاسيكي ثنائي الأبعاد وعالم مفتوح ثلاثي الأبعاد.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/snake-evolution.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#101a14",
+  "theme_color": "#17251e",
+  "categories": ["games"],
+  "icons": [
+    { "src": "/snake-evolution-pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/snake-evolution-pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/snake-evolution-pwa/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
