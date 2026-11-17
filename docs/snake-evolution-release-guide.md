@@ -35,6 +35,20 @@ Implemented gameplay:
 - Real payments, valuable rewards, leaderboards, or competitive rankings require server-authoritative ownership/validation.
 - Cloud saves, accounts, analytics, anti-cheat, and server-backed inventory are not included.
 
+## Progress persistence (coins, creatures, best score)
+
+- Progress is stored in three places and mirrored on every change: `localStorage` (`wild-progress-v2`), a cookie, and IndexedDB (`wild-trails-save`).
+- Every saved record carries a `rev` counter that only grows when progress changes. On load the copy with the highest `rev` wins, so an empty or older copy can never overwrite newer progress.
+- The one-time 2,000-coin gift is recorded in the record's `grants` list (`coins-2000-v1`) and is never applied twice. New one-time rewards should use a new grant id.
+- Saves are per browser *origin*. Opening a different deployment URL (for example a Vercel preview URL) is a different origin with its own empty save; use the production domain.
+
+## PWA
+
+- `public/snake-evolution-pwa/manifest.webmanifest` and icons, plus `public/snake-evolution-sw.js`.
+- The service worker is registered with scope `/snake-evolution.html`, so it only controls the game page, not the dashboard.
+- The game page and local modules are network-first (releases appear immediately), three.js is cache-first, GLB models are stale-while-revalidate. The 3D engine is cached after the first online visit; Classic mode works offline from the first visit.
+- The worker never touches `localStorage`, IndexedDB or cookies, so updating it does not affect saved progress.
+
 ## Verification
 
 Run:

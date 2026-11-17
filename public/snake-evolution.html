@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#17251e">
+<link rel="manifest" href="/snake-evolution-pwa/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/snake-evolution-pwa/icon-192.png">
+<link rel="apple-touch-icon" href="/snake-evolution-pwa/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Wild Trails">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Wild Trails — Snake Evolution</title>
 <style>
 :root{color-scheme:dark;--ink:#f4f0e6;--muted:#b5b9aa;--forest:#17251e;--forest-2:#24382b;--paper:#eee9dc;--paper-2:#f8f5ed;--line:#d4cebd;--gold:#d8b36b;--green:#4b684b;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
@@ -373,6 +380,11 @@ $('pauseBtn').onclick=()=>{if(!state.started||state.roundOver)return;state.pause
 let raf=0,THREE=null,threePromise=null,GLTFLoader=null,SkeletonUtils=null,gltfLoader=null,gltfCache=new Map(),animationMixers=[],renderer=null,scene=null,camera=null,world=null,player=null,creatureHead=null,bodyParts=[],foodItems=[],obstacles=[],path=[],trailMesh=null,trailRingCount=18,heading=0,cameraYaw=0,cameraPitch=.32,cameraDistance=8.5,moveInput={x:0,y:0},lookInput={x:0,y:0},keys={},clockLast=0,classic=null;
 function stopLoop(){if(raf)cancelAnimationFrame(raf);raf=0}function startLoop(){if(state.paused||!state.started||state.roundOver||raf)return;clockLast=performance.now();if(state.mode==='old')raf=requestAnimationFrame(classicFrame);else raf=requestAnimationFrame(openFrame)}
 let wtArt=null;
+// Bridge: helpers defined inside applyWildTrailsUpgrade() that later patch blocks also need.
+const wtShared={playableBounds:null,canFoodOccupy:null,ensureThumbnailRenderer:null};
+function playableBounds(){return wtShared.playableBounds()}
+function canFoodOccupy(x,z,pad){return wtShared.canFoodOccupy(x,z,pad)}
+async function ensureThumbnailRenderer(){return wtShared.ensureThumbnailRenderer()}
 function loadThree(){if(!threePromise)threePromise=import('three').then(async m=>{THREE=m;const [loaderModule,utilsModule,artModule]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/utils/SkeletonUtils.js'),import('./wild-trails-art.mjs').catch(e=>{console.warn('Art enhancement unavailable; using original rendering',e);return null})]);GLTFLoader=loaderModule.GLTFLoader;SkeletonUtils=utilsModule;wtArt=artModule;gltfLoader=new GLTFLoader();return m}).catch(e=>{console.warn('3D asset loader unavailable',e);threePromise=null;return null});return threePromise}
 const GAME_ASSETS={
  animals:{duck:'https://gobkit.com/freebies/animal/Duck.glb',owl:'https://gobkit.com/freebies/animalB/Owl.glb',fish:'https://gobkit.com/freebies/animal/Shark.glb',bird:'https://gobkit.com/freebies/animal/Bat.glb',cat:'https://gobkit.com/freebies/animal/Corgi.glb',deer:'https://gobkit.com/freebies/animalB/Goat.glb',falcon:'https://gobkit.com/freebies/animalB/Seagull.glb',chicken:'https://gobkit.com/freebies/animalB/Quail.glb'},
@@ -2637,6 +2649,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   const createAnimalBeforeSerpentDetails=createAnimal;
   createAnimal=function(skin){const g=createAnimalBeforeSerpentDetails(skin);if(skin.id==='snake'){const cheek=mat(skin.accent,.55,.04),ridge=mat(skin.color,.58);for(const side of [-1,1]){animalBall(g,'Serpent cheek scale',cheek,side*.34,.40,-.74,.15,.11,.18,18);animalBall(g,'Serpent brow ridge',ridge,side*.29,.76,-.57,.13,.07,.14,18)}}return g};
 
+  wtShared.playableBounds=playableBounds;wtShared.canFoodOccupy=canFoodOccupy;wtShared.ensureThumbnailRenderer=ensureThumbnailRenderer;
 })();
 
 /* WILD TRAILS — PREMIUM STYLIZED ADVENTURE ART PASS
@@ -3020,7 +3033,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
       for(let y=32;y<256;y+=64){c.strokeStyle='#777777';c.globalAlpha=.18;c.beginPath();c.moveTo(0,y);c.lineTo(256,y);c.stroke()}c.globalAlpha=1;
     }
     const make=(canvas,color=false)=>{const t=new THREE.CanvasTexture(canvas);if(color)t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=renderer?.capabilities?.getMaxAnisotropy?.()||4;return t};
-    const result={map:make(cv,true),bump:make(b),rough:make(rough)};wtSurfaceCache.set(kind,result);return result;
+    const result={map:make(cv,true),bump:make(bump),rough:make(rough)};wtSurfaceCache.set(kind,result);return result;
   }
   function wtApplyStructuralFinish(object,kind,repeatX,repeatY){
     if(!object?.material||!object.material.clone)return;
@@ -3155,7 +3168,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     if(deer)ball(leg,'Hoof',dark,0,-up-low-.035,-.07,.105,.09,.15,18);else ball(leg,'Paw',panda?accent:body,0,-up-low-.035,-.075,.13,.075,.16,20);
     rig.limbs.push(leg);
    }
-   jaw(head,rig,croc?-.18:-.23,croc?-.62:-.51,croc?.25:.20,cream,!croc);
+   mouth(head,rig,croc?-.18:-.23,croc?-.62:-.51,croc?.25:.20,cream,!croc);
   }
   g.userData.kind=id;g.userData.rig=rig;g.userData.artVersion='creature-anatomy-v3';return g;
  }
@@ -3639,21 +3652,60 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
   function readRaw(key){
     try{return localStorage.getItem(key)}catch{return null}
   }
+  // rev only ever grows when the saved progress actually changes. A fresh/blank
+  // storage starts at a low rev, so an older or empty copy can never overwrite a newer one.
+  let rev=0,grants=[],lastSig='';
+  const GRANT_ID='coins-2000-v1',GRANT_AMOUNT=2000;
   function persistProgress(){
-    const record={
+    const base={
       version:2,coins:Math.max(0,Math.floor(Number(state.coins)||0)),
       best:Math.max(0,Math.floor(Number(state.best)||0)),
       owned:[...new Set([0,...owned].map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<skins.length))],
-      skin:Math.min(skins.length-1,Math.max(0,Math.floor(Number(state.skin)||0))),
-      updatedAt:Date.now()
+      skin:Math.min(skins.length-1,Math.max(0,Math.floor(Number(state.skin)||0)))
     };
+    const sig=JSON.stringify([base.coins,base.best,base.owned,base.skin,grants]);
+    if(sig!==lastSig){lastSig=sig;rev+=1}
+    const record={...base,rev,grants:[...grants],updatedAt:Date.now()};
     const raw=JSON.stringify(record);
     try{localStorage.setItem(SAVE_KEY,raw);localStorage.setItem("wild-coins",String(record.coins));localStorage.setItem("wild-best",String(record.best));localStorage.setItem("wild-owned",JSON.stringify(record.owned));}catch{}
     try{document.cookie=COOKIE_KEY+"="+encodeURIComponent(raw)+"; Max-Age=31536000; Path=/; SameSite=Lax"+(location.protocol==="https:"?"; Secure":"")}catch{}
     try{sessionStorage.setItem(SAVE_KEY,raw)}catch{}
+    queueMirror(record);
   }
+  // Third copy in IndexedDB: survives cases where localStorage/cookies get cleared.
+  let mirrorTimer=0,mirrorPending=null;
+  function idbOpen(){
+    return new Promise((resolve,reject)=>{
+      try{
+        const req=indexedDB.open('wild-trails-save',1);
+        req.onupgradeneeded=()=>{try{req.result.createObjectStore('kv')}catch{}};
+        req.onsuccess=()=>resolve(req.result);
+        req.onerror=()=>reject(req.error);
+      }catch(e){reject(e)}
+    });
+  }
+  function idbWrite(record){
+    return idbOpen().then(db=>new Promise(resolve=>{
+      try{
+        const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(record,'progress');
+        tx.oncomplete=()=>{db.close();resolve(true)};tx.onerror=tx.onabort=()=>{db.close();resolve(false)};
+      }catch{try{db.close()}catch{}resolve(false)}
+    })).catch(()=>false);
+  }
+  function idbRead(){
+    return idbOpen().then(db=>new Promise(resolve=>{
+      try{
+        const req=db.transaction('kv','readonly').objectStore('kv').get('progress');
+        req.onsuccess=()=>{db.close();resolve(req.result||null)};req.onerror=()=>{db.close();resolve(null)};
+      }catch{try{db.close()}catch{}resolve(null)}
+    })).catch(()=>null);
+  }
+  function flushMirror(){clearTimeout(mirrorTimer);mirrorTimer=0;if(mirrorPending){const r=mirrorPending;mirrorPending=null;idbWrite(r)}}
+  function queueMirror(record){mirrorPending=record;if(!mirrorTimer)mirrorTimer=setTimeout(flushMirror,350)}
   function restoreProgress(){
     const backup=readBackup();if(!backup)return;
+    rev=Math.max(0,Math.floor(Number(backup.rev)||0));
+    grants=Array.isArray(backup.grants)?backup.grants.map(String):[];
     const rawCoins=readRaw("wild-coins"),rawBest=readRaw("wild-best"),rawOwned=readRaw("wild-owned");
     // Existing keys remain authoritative when present, including a deliberate zero balance.
     const savedCoins=Math.max(0,Math.floor(Number(backup.coins)||0));
@@ -3670,12 +3722,29 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
     if(Number.isInteger(backup.skin)&&backup.skin>=0&&backup.skin<skins.length)state.skin=backup.skin;
   }
   restoreProgress();
+  // One-time gift: added once per saved profile, then recorded so later updates never repeat or remove it.
+  let grantFresh=false;
+  if(!grants.includes(GRANT_ID)){grants.push(GRANT_ID);state.coins=Math.max(0,Math.floor(Number(state.coins)||0))+GRANT_AMOUNT;grantFresh=true}
   const priorUpdateHud=updateHud;
   updateHud=function(){priorUpdateHud();persistProgress()};
   persistProgress();
-  window.addEventListener("pagehide",persistProgress,{capture:true});
-  window.addEventListener("beforeunload",persistProgress,{capture:true});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persistProgress()});
+  window.addEventListener("pagehide",()=>{persistProgress();flushMirror()},{capture:true});
+  window.addEventListener("beforeunload",()=>{persistProgress();flushMirror()},{capture:true});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){persistProgress();flushMirror()}});
+  // If localStorage/cookies were wiped, the IndexedDB copy (higher rev) restores coins, skins and best score.
+  idbRead().then(rec=>{
+    try{
+      if(rec&&validRecord(rec)&&Math.floor(Number(rec.rev)||0)>rev){
+        state.coins=Math.max(0,Math.floor(Number(rec.coins)||0));
+        state.best=Math.max(0,Math.floor(Number(rec.best)||0));
+        owned=[...new Set([0,...(Array.isArray(rec.owned)?rec.owned:[]).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<skins.length)])].sort((a,b)=>a-b);
+        if(!state.started&&Number.isInteger(rec.skin)&&rec.skin>=0&&rec.skin<skins.length)state.skin=rec.skin;
+        grants=Array.isArray(rec.grants)?rec.grants.map(String):[];rev=Math.floor(Number(rec.rev)||0);grantFresh=false;
+        updateHud();if(!state.started&&typeof showStep==='function')showStep(state.step);
+      }
+    }catch{}
+    if(grantFresh)setTimeout(()=>toast('هدية: تمت إضافة '+GRANT_AMOUNT.toLocaleString()+' عملة لحسابك'),700);
+  });
   try{navigator.storage?.persist?.().catch(()=>{})}catch{}
   const oldFinishRound=finishRound;
   finishRound=function(reason){persistProgress();oldFinishRound(reason)};
@@ -5813,6 +5882,14 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 
 ;
 
+</script>
+<script>
+// PWA: the worker is scoped to this page only, so the rest of the site is never affected.
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/snake-evolution-sw.js',{scope:'/snake-evolution.html',updateViaCache:'none'}).catch(function(e){console.warn('PWA service worker unavailable',e)});
+  });
+}
 </script>
 </body>
 </html>
