@@ -3,7 +3,6 @@
 
   const DB_NAME = "zakerti-memory";
   const DB_VERSION = 1;
-  const PBKDF2_ITERATIONS = 310000;
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   const $ = (id) => document.getElementById(id);
@@ -14,8 +13,6 @@
   let activeFolder = "all";
   let activeFilter = "all";
   let searchTerm = "";
-  let currentKey = null;
-  let lockMeta = null;
   let editingId = null;
   let installPrompt = null;
   let toastTimer = null;
@@ -70,8 +67,6 @@
       const meta = tx.objectStore("meta");
       store.clear();
       records.forEach((record) => store.put(record));
-      if (options && options.lockValue) meta.put({ key: "lock", value: options.lockValue });
-      if (options && options.removeLock) meta.delete("lock");
       if (options && options.folders) meta.put({ key: "folders", value: options.folders });
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error || new Error("تعذر تحديث الخزنة"));
@@ -79,145 +74,13 @@
     });
   }
 
-  function toBase64(value) {
-    const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
-    let binary = "";
-    const chunk = 0x8000;
-    for (let offset = 0; offset < bytes.length; offset += chunk) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(offset, Math.min(offset + chunk, bytes.length)));
-    }
-    return btoa(binary);
-  }
-
-  function fromBase64(value) {
-    const binary = atob(value);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return bytes;
-  }
-
-  async function deriveKey(passcode, salt) {
-    const material = await crypto.subtle.importKey("raw", encoder.encode(passcode), "PBKDF2", false, ["deriveKey"]);
-    return crypto.subtle.deriveKey(
-      { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
-      material,
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["encrypt", "decrypt"]
-    );
-  }
-
-  async function encryptItem(item, key) {
-    const metadata = { ...item };
-    delete metadata.blob;
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(JSON.stringify(metadata)));
-    const record = { id: item.id, secure: true, iv: toBase64(iv), data: toBase64(encrypted), blobIv: null, blobData: null };
-    if (item.blob instanceof Blob) {
-      const blobIv = crypto.getRandomValues(new Uint8Array(12));
-      const encryptedBlob = await crypto.subtle.encrypt({ name: "AES-GCM", iv: blobIv }, key, await item.blob.arrayBuffer());
-      record.blobIv = toBase64(blobIv);
-      record.blobData = new Blob([encryptedBlob], { type: "application/octet-stream" });
-    }
-    return record;
-  }
-
-  async function decryptItem(record, key) {
-    const plain = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: fromBase64(record.iv) },
-      key,
-      fromBase64(record.data)
-    );
-    const item = JSON.parse(decoder.decode(plain));
-    if (record.blobData && record.blobIv) {
-      const blobPlain = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: fromBase64(record.blobIv) },
-        key,
-        await record.blobData.arrayBuffer()
-      );
-      item.blob = new Blob([blobPlain], { type: item.mime || "application/octet-stream" });
-    }
-    return item;
-  }
-
   async function readItems() {
     const records = await getAllRecords();
-    const result = [];
-    for (const record of records) {
-      if (record.secure) {
-        if (!currentKey) continue;
-        result.push(await decryptItem(record, currentKey));
-      } else {
-        result.push(record);
-      }
-    }
-    return result;
+    return records.filter((record) => !record.secure);
   }
 
   async function storeItem(item) {
-    const record = currentKey ? await encryptItem(item, currentKey) : item;
-    await putRecord(record);
-  }
-
-  async function unlockWithPasscode(passcode) {
-    if (!lockMeta || !passcode) return false;
-    try {
-      const key = await deriveKey(passcode, fromBase64(lockMeta.salt));
-      const result = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: fromBase64(lockMeta.checkIv) },
-        key,
-        fromBase64(lockMeta.check)
-      );
-      if (decoder.decode(result) !== "ZAKERTI_MEMORY_OK_V1") return false;
-      currentKey = key;
-      items = await readItems();
-      $("lockScreen").hidden = true;
-      $("appShell").hidden = false;
-      $("lockBtn").textContent = "قفل الآن";
-      renderAll();
-      processPendingShare();
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function createLockScreen() {
-    $("appShell").hidden = true;
-    $("lockScreen").hidden = false;
-    $("unlockPin").value = "";
-    $("unlockError").textContent = "";
-    setTimeout(() => $("unlockPin").focus(), 40);
-  }
-
-  async function enableLock(passcode) {
-    if (!crypto.subtle) throw new Error("التشفير غير متاح في هذا المتصفح");
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await deriveKey(passcode, salt);
-    const checkIv = crypto.getRandomValues(new Uint8Array(12));
-    const check = await crypto.subtle.encrypt({ name: "AES-GCM", iv: checkIv }, key, encoder.encode("ZAKERTI_MEMORY_OK_V1"));
-    const nextLock = {
-      salt: toBase64(salt),
-      checkIv: toBase64(checkIv),
-      check: toBase64(check),
-      iterations: PBKDF2_ITERATIONS
-    };
-    const encryptedRecords = [];
-    for (const item of items) encryptedRecords.push(await encryptItem(item, key));
-    await replaceRecords(encryptedRecords, { lockValue: nextLock });
-    lockMeta = nextLock;
-    currentKey = key;
-    $("lockDialog").close();
-    $("lockBtn").textContent = "قفل الآن";
-    showToast("تم تشفير محفوظاتك وتفعيل القفل");
-  }
-
-  async function lockNow() {
-    currentKey = null;
-    items = [];
-    for (const url of objectUrls.values()) URL.revokeObjectURL(url);
-    objectUrls.clear();
-    createLockScreen();
+    await putRecord(item);
   }
 
   function escapeHtml(value) {
@@ -532,44 +395,35 @@
     const backupItems = [];
     for (const item of items) {
       const copy = { ...item };
-      if (copy.blob instanceof Blob) copy.fileData = toBase64(await copy.blob.arrayBuffer());
+      if (copy.blob instanceof Blob) copy.fileData = await blobToBase64(copy.blob);
       delete copy.blob;
       backupItems.push(copy);
     }
     const payload = { format: "zakerti-backup", version: 1, exportedAt: new Date().toISOString(), folders, items: backupItems };
-    let output = payload;
-    if (currentKey && lockMeta) {
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, currentKey, encoder.encode(JSON.stringify(payload)));
-      output = { format: "zakerti-encrypted-backup", version: 1, salt: lockMeta.salt, iterations: PBKDF2_ITERATIONS, iv: toBase64(iv), data: toBase64(encrypted) };
-    }
-    const blob = new Blob([JSON.stringify(output)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = "zakerti-backup-" + new Date().toISOString().slice(0, 10) + ".json";
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
-    showToast(currentKey ? "تم تصدير نسخة احتياطية مشفّرة" : "تم تصدير النسخة الاحتياطية");
+    showToast("تم تصدير النسخة الاحتياطية");
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
   }
 
   async function importBackup(file) {
     if (!file) return;
     try {
       let payload = JSON.parse(await file.text());
-      if (payload.format === "zakerti-encrypted-backup") {
-        const passcode = prompt("أدخل رمز المرور الذي استُخدم عند إنشاء النسخة الاحتياطية:");
-        if (!passcode) return;
-        const salt = fromBase64(payload.salt);
-        const material = await crypto.subtle.importKey("raw", encoder.encode(passcode), "PBKDF2", false, ["deriveKey"]);
-        const key = await crypto.subtle.deriveKey(
-          { name: "PBKDF2", salt, iterations: payload.iterations || PBKDF2_ITERATIONS, hash: "SHA-256" },
-          material,
-          { name: "AES-GCM", length: 256 }, false, ["decrypt"]
-        );
-        const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromBase64(payload.iv) }, key, fromBase64(payload.data));
-        payload = JSON.parse(decoder.decode(plain));
-      }
+      if (payload.format === "zakerti-encrypted-backup") throw new Error("النسخ الاحتياطية المشفّرة القديمة تحتاج رمز المرور السابق.");
       if (payload.format !== "zakerti-backup" || payload.version !== 1 || !Array.isArray(payload.items)) throw new Error("صيغة النسخة الاحتياطية غير مدعومة");
       if (!confirm("سيتم استبدال المحفوظات الحالية بمحتويات النسخة الاحتياطية. هل تريد المتابعة؟")) return;
       const imported = payload.items.map((entry) => {
@@ -580,8 +434,7 @@
         }
         return item;
       });
-      const records = [];
-      for (const item of imported) records.push(currentKey ? await encryptItem(item, currentKey) : item);
+      const records = imported;
       folders = Array.isArray(payload.folders) && payload.folders.length ? payload.folders : ["غير مصنف"];
       await replaceRecords(records, { folders });
       items = imported;
@@ -589,7 +442,7 @@
       renderAll();
       showToast("تم استيراد النسخة الاحتياطية بنجاح");
     } catch (error) {
-      showToast("تعذر استيراد النسخة. تأكد من الملف ورمز المرور.");
+      showToast(error.message || "تعذر استيراد النسخة. تأكد من الملف.");
     } finally {
       $("importFile").value = "";
     }
@@ -677,41 +530,6 @@
     $("backupBtn").addEventListener("click", backupData);
     $("importBtn").addEventListener("click", () => $("importFile").click());
     $("importFile").addEventListener("change", (event) => importBackup(event.target.files[0]));
-    $("lockBtn").addEventListener("click", () => {
-      if (lockMeta) lockNow();
-      else {
-        $("lockError").textContent = "";
-        $("newPin").value = "";
-        $("confirmPin").value = "";
-        if (!crypto.subtle) {
-          showToast("القفل المشفّر يحتاج متصفحًا حديثًا واتصال HTTPS");
-          return;
-        }
-        openDialog("lockDialog");
-      }
-    });
-    $("lockForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const pin = $("newPin").value;
-      if (pin.length < 6) { $("lockError").textContent = "الرمز لازم يكون 6 أحرف أو أرقام على الأقل."; return; }
-      if (pin !== $("confirmPin").value) { $("lockError").textContent = "رمزا المرور غير متطابقين."; return; }
-      const submit = $("lockForm").querySelector('button[type="submit"]');
-      submit.disabled = true;
-      submit.textContent = "جارٍ تشفير محفوظاتك…";
-      try { await enableLock(pin); }
-      catch (error) { $("lockError").textContent = error.message || "تعذر تفعيل القفل."; }
-      finally { submit.disabled = false; submit.textContent = "تشفير وتفعيل القفل"; }
-    });
-    $("unlockForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const submit = $("unlockForm").querySelector('button[type="submit"]');
-      submit.disabled = true;
-      submit.textContent = "جارٍ الفتح…";
-      const ok = await unlockWithPasscode($("unlockPin").value);
-      if (!ok) $("unlockError").textContent = "رمز المرور غير صحيح. حاول مرة أخرى.";
-      submit.disabled = false;
-      submit.textContent = "فتح ذاكرتي";
-    });
     $("installBtn").addEventListener("click", async () => {
       if (!installPrompt) return;
       installPrompt.prompt();
@@ -721,9 +539,6 @@
     });
     $("itemDialog").addEventListener("click", (event) => {
       if (event.target === $("itemDialog")) closeDialog("itemDialog");
-    });
-    $("lockDialog").addEventListener("click", (event) => {
-      if (event.target === $("lockDialog")) closeDialog("lockDialog");
     });
   }
 
@@ -737,17 +552,12 @@
       } catch (_) {}
       const savedFolders = await getMeta("folders");
       if (Array.isArray(savedFolders) && savedFolders.length) folders = savedFolders;
-      lockMeta = await getMeta("lock");
-      if (lockMeta) {
-        $("lockBtn").textContent = "قفل الآن";
-        createLockScreen();
-      } else {
-        items = await readItems();
-        $("appShell").hidden = false;
-        $("lockScreen").hidden = true;
-        renderAll();
-        processPendingShare();
-      }
+      const legacyLock = await getMeta("lock");
+      items = await readItems();
+      $("appShell").hidden = false;
+      renderAll();
+      processPendingShare();
+      if (legacyLock) showToast("توجد محفوظات قديمة مشفّرة بالقفل السابق؛ لن تظهر دون فك تشفيرها بالرمز القديم.");
     } catch (error) {
       $("appShell").hidden = false;
       showToast("التخزين المحلي غير متاح. جرّب فتح الموقع في متصفح عادي.");
