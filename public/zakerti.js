@@ -410,7 +410,7 @@
       $("itemUrl").focus();
       return;
     }
-    let type = file ? detectFileType(file) : (url ? "link" : "note");
+    let type = file ? detectFileType(file) : (url ? "link" : (existing && existing.blob ? existing.type : "note"));
     const title = $("itemTitle").value.trim() || (file ? file.name : (url ? new URL(url).hostname : ""));
     if (!title) {
       showToast("اكتب عنوانًا أو أضف رابطًا أو ملفًا");
