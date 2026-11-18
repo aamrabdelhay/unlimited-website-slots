@@ -1,0 +1,31 @@
+{
+  "id": "/zakerti.html",
+  "name": "ذاكرتي — خزنتك الشخصية",
+  "short_name": "ذاكرتي",
+  "description": "احفظ الروابط والصور والفيديوهات والملفات والملاحظات في مكان واحد.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/zakerti.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f1eb",
+  "theme_color": "#142235",
+  "icons": [
+    {
+      "src": "/zakerti-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/zakerti.html",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

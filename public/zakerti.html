@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#142235">
+  <meta name="description" content="خزنتك الشخصية لحفظ الروابط والصور والفيديوهات والملفات والملاحظات والعودة إليها بسهولة.">
+  <title>ذاكرتي — خزنتك الشخصية</title>
+  <link rel="manifest" href="/zakerti.webmanifest">
+  <link rel="icon" href="/zakerti-icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/zakerti.css">
+  <script src="/zakerti.js" defer></script>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <header class="topbar">
+      <a class="brand" href="/zakerti.html" aria-label="ذاكرتي — الرئيسية">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.7L6 21V4.8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m9 10 2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span><strong>ذاكرتي</strong><small>مساحة لكل ما تريد الرجوع إليه</small></span>
+      </a>
+      <div class="top-actions">
+        <button class="top-btn" id="quickSaveBtn" type="button" title="حفظ رابط من الحافظة"><span>＋</span> حفظ سريع</button>
+        <button class="top-btn subtle" id="backupBtn" type="button">نسخة احتياطية</button>
+        <button class="top-btn subtle" id="importBtn" type="button">استيراد</button>
+        <input id="importFile" type="file" accept=".json,application/json" hidden>
+        <button class="top-btn subtle" id="lockBtn" type="button">تفعيل القفل</button>
+        <button class="top-btn install-btn" id="installBtn" type="button" hidden>تثبيت التطبيق</button>
+        <a class="home-link" href="/" aria-label="العودة إلى Unlimited">العودة للمواقع</a>
+      </div>
+    </header>
+
+    <main class="main-wrap">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> YOUR PERSONAL MEMORY</p>
+          <h1>اللي بتحفظه… <em>هتلاقيه.</em></h1>
+          <p class="hero-description">روابط وصور وفيديوهات وصوتيات وملفات وملاحظات؛ كلها في مكان واحد، مرتبة وسهلة البحث.</p>
+        </div>
+        <button class="primary-btn hero-add" id="addItemBtn" type="button">
+          <span class="plus-icon">＋</span> أضف إلى ذاكرتي
+        </button>
+      </section>
+
+      <section class="stats-row" aria-label="إحصائيات محفوظاتك">
+        <div class="stat-card"><span class="stat-icon">▤</span><div><strong id="totalCount">0</strong><small>كل المحفوظات</small></div></div>
+        <div class="stat-card"><span class="stat-icon">♡</span><div><strong id="favoriteCount">0</strong><small>المفضلة</small></div></div>
+        <div class="stat-card"><span class="stat-icon">▣</span><div><strong id="folderCount">1</strong><small>المجلدات</small></div></div>
+      </section>
+
+      <section class="toolbar" aria-label="البحث والتصفية">
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <input id="searchInput" type="search" placeholder="دوّر بكلمة… عنوان، رابط، أو ملاحظة" autocomplete="off">
+          <kbd>⌕</kbd>
+        </label>
+        <div class="filter-pills" id="typeFilters" role="group" aria-label="نوع المحفوظات">
+          <button class="filter-pill active" data-filter="all" type="button">الكل</button>
+          <button class="filter-pill" data-filter="link" type="button">روابط</button>
+          <button class="filter-pill" data-filter="image" type="button">صور</button>
+          <button class="filter-pill" data-filter="video" type="button">فيديو</button>
+          <button class="filter-pill" data-filter="audio" type="button">صوت</button>
+          <button class="filter-pill" data-filter="file" type="button">ملفات</button>
+          <button class="filter-pill" data-filter="note" type="button">ملاحظات</button>
+          <button class="filter-pill" data-filter="favorite" type="button">♥ المفضلة</button>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <div class="sidebar-heading"><span>مكتبتي</span><button id="newFolderBtn" class="icon-btn" type="button" aria-label="إنشاء مجلد" title="مجلد جديد">＋</button></div>
+          <nav id="folderNav" class="folder-nav" aria-label="مجلدات المحفوظات"></nav>
+          <div class="privacy-note">
+            <span class="privacy-icon">⌑</span>
+            <strong>خصوصيتك أولًا</strong>
+            <p>محفوظاتك تبقى على هذا الجهاز والمتصفح. لا تُرفع ملفاتك إلى خادم.</p>
+          </div>
+        </aside>
+
+        <section class="library">
+          <div class="library-heading">
+            <div><p class="section-kicker" id="currentFolderLabel">مكتبتك</p><h2 id="currentFolderTitle">كل المحفوظات</h2></div>
+            <div class="result-count" id="resultCount">0 عنصر</div>
+          </div>
+          <div class="mobile-folders" id="mobileFolders" aria-label="اختيار المجلد"></div>
+          <div class="items-grid" id="itemsGrid"></div>
+          <div class="empty-state" id="emptyState">
+            <div class="empty-art"><span>✳</span><span>▱</span><span>✧</span></div>
+            <h3>لسه ذاكرتك فاضية؟</h3>
+            <p>ابدأ بحفظ أول رابط أو صورة أو فكرة، وارجعلها وقت ما تحتاجها.</p>
+            <button class="primary-btn" id="emptyAddBtn" type="button">احفظ أول حاجة</button>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer-note">ذاكرتي · خزنتك الرقمية الشخصية <span>كل شيء محفوظ على جهازك</span></footer>
+    </main>
+    <button class="floating-add" id="floatingAdd" type="button" aria-label="حفظ شيء جديد" title="حفظ سريع">＋</button>
+  </div>
+
+  <section class="lock-screen" id="lockScreen" hidden>
+    <div class="lock-card">
+      <div class="lock-emblem">⌑</div>
+      <p class="eyebrow">PRIVATE MEMORY</p>
+      <h1>ذاكرتك مقفولة</h1>
+      <p>اكتب رمز المرور لفتح محفوظاتك المشفّرة على هذا الجهاز.</p>
+      <form id="unlockForm">
+        <label for="unlockPin">رمز المرور</label>
+        <input id="unlockPin" type="password" inputmode="numeric" autocomplete="current-password" minlength="6" placeholder="••••••••" required>
+        <p class="form-error" id="unlockError" aria-live="polite"></p>
+        <button class="primary-btn full-btn" type="submit">فتح ذاكرتي</button>
+      </form>
+      <a class="back-home-lock" href="/">العودة إلى Unlimited</a>
+    </div>
+  </section>
+
+  <dialog class="modal" id="itemDialog">
+    <form id="itemForm" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">SAVE SOMETHING</p><h2 id="itemDialogTitle">أضف إلى ذاكرتي</h2></div><button class="close-btn" type="button" data-close="itemDialog" aria-label="إغلاق">×</button></div>
+      <input id="itemId" type="hidden">
+      <label class="field-label" for="itemTitle">العنوان</label>
+      <input class="field-input" id="itemTitle" maxlength="140" placeholder="اسم يسهّل عليك تفتكره" required>
+      <label class="field-label" for="itemUrl">الرابط <span>اختياري</span></label>
+      <input class="field-input" id="itemUrl" type="url" placeholder="https://example.com">
+      <label class="field-label" for="itemNote">ملاحظة <span>اختياري</span></label>
+      <textarea class="field-input note-input" id="itemNote" rows="3" maxlength="5000" placeholder="اكتب أي تفصيلة تحب تفتكرها…"></textarea>
+      <label class="field-label" for="itemFolder">المجلد</label>
+      <select class="field-input" id="itemFolder"></select>
+      <label class="field-label">ملف مرفق <span>صورة أو فيديو أو صوت أو مستند</span></label>
+      <label class="drop-zone" for="itemFile"><span class="upload-icon">↑</span><strong id="fileLabel">اضغط لاختيار ملف أو اسحبه هنا</strong><small id="fileHint">الملفات تحفظ داخل متصفحك على هذا الجهاز</small><input id="itemFile" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"></label>
+      <div class="modal-actions"><button class="secondary-btn" type="button" data-close="itemDialog">إلغاء</button><button class="primary-btn" type="submit" id="saveItemBtn">حفظ في ذاكرتي</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal compact-modal" id="folderDialog">
+    <form id="folderForm" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">ORGANIZE</p><h2>مجلد جديد</h2></div><button class="close-btn" type="button" data-close="folderDialog" aria-label="إغلاق">×</button></div>
+      <label class="field-label" for="folderName">اسم المجلد</label>
+      <input class="field-input" id="folderName" maxlength="48" placeholder="مثلاً: أتعلم لاحقًا" required>
+      <div class="modal-actions"><button class="secondary-btn" type="button" data-close="folderDialog">إلغاء</button><button class="primary-btn" type="submit">إنشاء المجلد</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal compact-modal" id="lockDialog">
+    <form id="lockForm" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">PRIVATE VAULT</p><h2>فعّل قفل ذاكرتك</h2></div><button class="close-btn" type="button" data-close="lockDialog" aria-label="إغلاق">×</button></div>
+      <p class="modal-explain">هنشفّر المحفوظات والملفات على جهازك. اختار رمزًا من 6 أحرف أو أرقام على الأقل، واحتفظ به؛ لا توجد طريقة لاستعادته لو نسيته.</p>
+      <label class="field-label" for="newPin">رمز المرور الجديد</label>
+      <input class="field-input" id="newPin" type="password" autocomplete="new-password" minlength="6" required>
+      <label class="field-label" for="confirmPin">تأكيد رمز المرور</label>
+      <input class="field-input" id="confirmPin" type="password" autocomplete="new-password" minlength="6" required>
+      <p class="form-error" id="lockError" aria-live="polite"></p>
+      <div class="modal-actions"><button class="secondary-btn" type="button" data-close="lockDialog">إلغاء</button><button class="primary-btn" type="submit">تشفير وتفعيل القفل</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
