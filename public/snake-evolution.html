@@ -5882,6 +5882,219 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.star
 
 ;
 
+
+/* WT FINAL 3D BOOT GUARD — never leave the player on a blank screen. */
+(function wtFinal3DBootGuard(){
+  const previousLoadThree=loadThree;
+  loadThree=function(){
+    let timer=0;
+    const pending=Promise.resolve().then(()=>previousLoadThree());
+    const timeout=new Promise(resolve=>{
+      timer=setTimeout(()=>{
+        // Release the shared promise reference so a retry can make a fresh CDN request.
+        threePromise=null;
+        resolve(null);
+      },20000);
+    });
+    return Promise.race([pending,timeout]).finally(()=>clearTimeout(timer));
+  };
+
+  const previousStartOpenGame=startOpenGame;
+  const continueButton=$('continueBtn');
+  const normalContinueHandler=continueButton?.onclick||null;
+  let bootRunning=false;
+  let recoveryVisible=false;
+  let threeDReady=false;
+  let bootScreen=null;
+  let bootStyle=null;
+
+  function showBootScreen(){
+    if(!bootStyle){
+      bootStyle=document.createElement('style');
+      bootStyle.id='wt3dBootGuardStyles';
+      bootStyle.textContent=
+        '@keyframes wt3dBootSpin{to{transform:rotate(360deg)}}'+
+        '#wt3dBootScreen{position:fixed;inset:0;z-index:99990;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 38%,#263d2d 0%,#101b15 66%,#08110d 100%);color:#f4ecd8;font-family:system-ui,sans-serif;text-align:center;padding:24px}'+
+        '#wt3dBootScreen .wt3d-boot-card{display:grid;justify-items:center;gap:13px;max-width:360px}'+
+        '#wt3dBootScreen .wt3d-boot-spinner{width:42px;height:42px;border:3px solid #ffffff28;border-top-color:#e3c27c;border-radius:50%;animation:wt3dBootSpin .85s linear infinite}'+
+        '#wt3dBootScreen strong{font-size:20px}'+
+        '#wt3dBootScreen small{font-size:12px;line-height:1.8;color:#c5cdbf}';
+      document.head.appendChild(bootStyle);
+    }
+    if(!bootScreen){
+      bootScreen=document.createElement('div');
+      bootScreen.id='wt3dBootScreen';
+      bootScreen.setAttribute('role','status');
+      bootScreen.setAttribute('aria-live','polite');
+      bootScreen.innerHTML='<div class="wt3d-boot-card"><i class="wt3d-boot-spinner"></i><strong>جارٍ تجهيز العالم ثلاثي الأبعاد</strong><small>تحميل محرك الرسوم وتجهيز الخريطة والشخصية…</small></div>';
+      document.body.appendChild(bootScreen);
+    }
+    bootScreen.style.display='grid';
+    window.__WT_3D_BOOT_STATUS='loading';
+  }
+
+  function hideBootScreen(){
+    if(bootScreen)bootScreen.style.display='none';
+  }
+
+  function logBootFailure(error){
+    const message=String(error?.message||error||'Unknown 3D startup error');
+    const detail={message:'3D startup recovery: '+message,stack:error?.stack||'',at:new Date().toISOString()};
+    window.__WT_LAST_BOOT_FAILURE=detail;
+    try{window.__WT_RUNTIME_ERRORS?.push(detail)}catch{}
+    console.error(detail.message,error);
+  }
+
+  function releaseLostRenderer(){
+    const old=renderer;
+    renderer=null;scene=null;camera=null;world=null;player=null;creatureHead=null;trailMesh=null;
+    try{$('game').replaceChildren()}catch{}
+    try{old?.dispose?.()}catch{}
+    try{old?.forceContextLoss?.()}catch{}
+  }
+
+  function showRecovery(error,contextLost=false){
+    if(recoveryVisible)return;
+    recoveryVisible=true;
+    threeDReady=false;
+    window.__WT_3D_BOOT_STATUS='failed';
+    logBootFailure(error);
+    try{stopLoop()}catch{}
+    if(contextLost)releaseLostRenderer();
+    state.started=false;
+    state.paused=true;
+    state.roundOver=false;
+    hideBootScreen();
+    $('touchControls')?.classList.remove('show');
+    $('overlay')?.classList.remove('hidden');
+    $('stepTitle').textContent='تعذر تشغيل العالم ثلاثي الأبعاد';
+    $('stepSub').textContent='حدث خطأ أثناء تجهيز مشهد اللعبة. لم نفقد تقدمك أو الشخصيات المفتوحة.';
+    $('stepHint').textContent='اضغط «إعادة المحاولة» لإعادة تحميل محرك الرسوم وتجهيز العالم من جديد.';
+    if(continueButton){
+      continueButton.hidden=false;
+      continueButton.disabled=false;
+      continueButton.textContent='إعادة المحاولة';
+      continueButton.onclick=()=>{
+        continueButton.onclick=normalContinueHandler;
+        recoveryVisible=false;
+        state.mode='open';
+        state.started=false;
+        state.paused=false;
+        state.roundOver=false;
+        startGame();
+      };
+    }
+    const closeButton=$('closeBtn');
+    if(closeButton)closeButton.hidden=true;
+    const backButton=$('backBtn');
+    if(backButton)backButton.hidden=false;
+    try{updateHud()}catch{}
+    try{toast('تعذر تشغيل 3D — اضغط إعادة المحاولة')}catch{}
+  }
+
+  function bindContextRecovery(){
+    const canvas=renderer?.domElement;
+    if(!canvas||canvas.dataset.wt3dContextGuard==='true')return;
+    canvas.dataset.wt3dContextGuard='true';
+    canvas.addEventListener('webglcontextlost',event=>{
+      event.preventDefault();
+      showRecovery(new Error('فُقد اتصال WebGL أثناء تشغيل اللعبة'),true);
+    },{once:true});
+  }
+
+  function waitForFirstRenderedFrame(activeRenderer,baseline){
+    return new Promise((resolve,reject)=>{
+      let frameId=0;
+      const timeout=setTimeout(()=>{
+        if(frameId)cancelAnimationFrame(frameId);
+        reject(new Error('لم يرسم محرك 3D أول إطار خلال المهلة المحددة'));
+      },7000);
+      const check=()=>{
+        if(!state.started||state.paused){
+          clearTimeout(timeout);
+          reject(new Error('توقف تشغيل اللعبة قبل اكتمال أول إطار'));
+          return;
+        }
+        if(renderer!==activeRenderer){
+          clearTimeout(timeout);
+          reject(new Error('تغير محرك الرسوم أثناء بدء اللعبة'));
+          return;
+        }
+        const frame=Number(activeRenderer?.info?.render?.frame)||0;
+        if(frame>baseline){
+          clearTimeout(timeout);
+          resolve();
+          return;
+        }
+        frameId=requestAnimationFrame(check);
+      };
+      frameId=requestAnimationFrame(check);
+    });
+  }
+
+  // A back action returns to the normal menu handler after a failed boot.
+  $('backBtn')?.addEventListener('click',()=>{
+    if(continueButton)continueButton.onclick=normalContinueHandler;
+    recoveryVisible=false;
+  },true);
+  $('closeBtn')?.addEventListener('click',()=>{
+    if(continueButton)continueButton.onclick=normalContinueHandler;
+    recoveryVisible=false;
+  },true);
+
+  startOpenGame=async function(){
+    if(bootRunning)return;
+    bootRunning=true;
+    threeDReady=false;
+    showBootScreen();
+    try{
+      // Let the loading screen paint before the synchronous world-generation work begins.
+      await new Promise(resolve=>{
+        let finished=false;
+        const frame=requestAnimationFrame(()=>{finished=true;resolve()});
+        setTimeout(()=>{if(!finished){cancelAnimationFrame(frame);resolve()}},450);
+      });
+      const previousRenderer=renderer;
+      const baseline=Number(previousRenderer?.info?.render?.frame)||0;
+      await previousStartOpenGame();
+      if(!state.started){
+        showRecovery(new Error('تعذر تحميل المحرك أو تهيئة عالم اللعب'));
+        return;
+      }
+      if(!renderer||!scene||!camera||!world||!player||!renderer.domElement){
+        throw new Error('اكتمل التحميل دون إنشاء عناصر العالم الأساسية');
+      }
+      bindContextRecovery();
+      const activeRenderer=renderer;
+      const startFrame=activeRenderer===previousRenderer?baseline:0;
+      await waitForFirstRenderedFrame(activeRenderer,startFrame);
+      if(!state.started||state.roundOver)return;
+      threeDReady=true;
+      window.__WT_3D_BOOT_STATUS='ready';
+      hideBootScreen();
+      recoveryVisible=false;
+    }catch(error){
+      showRecovery(error);
+    }finally{
+      bootRunning=false;
+      hideBootScreen();
+    }
+  };
+
+  // Recover from runtime exceptions that otherwise stop the animation loop silently.
+  window.addEventListener('error',event=>{
+    if(threeDReady&&state.mode==='open'&&state.started&&!state.paused&&!state.roundOver){
+      showRecovery(event.error||new Error(event.message||'3D runtime error'));
+    }
+  });
+  window.addEventListener('unhandledrejection',event=>{
+    if(threeDReady&&state.mode==='open'&&state.started&&!state.paused&&!state.roundOver){
+      event.preventDefault();
+      showRecovery(event.reason||new Error('3D runtime promise rejected'));
+    }
+  });
+})();
+
 </script>
 <script>
 // PWA: the worker is scoped to this page only, so the rest of the site is never affected.
