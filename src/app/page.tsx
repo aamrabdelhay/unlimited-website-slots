@@ -8,7 +8,7 @@ export default function DashboardPage() {
     >
       <nav
         aria-label="المواقع"
-        className="grid w-full max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid w-full max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
       >
         <a
           href="/marafeat-tanfiz.html"
