@@ -1,53 +1,63 @@
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { getPool } from "@/lib/slot-db";
-import { resolveSlotDatabaseConfig } from "@/lib/db-config";
-import { parseManifest } from "@/lib/manifest";
-import rawManifest from "../manifest.json";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { list, put } from "@vercel/blob";
 import { apiError, apiJson, type SlotApiHandler } from "@/lib/site-contract";
-const manifest=parseManifest(rawManifest);
-const config=resolveSlotDatabaseConfig(manifest.slotId,manifest.database);
-const pool=()=>getPool(config);
-const schema='"slot_000001"';
-const hash=(v:string)=>createHash("sha256").update(v).digest("hex");
-let ready:Promise<void>|null=null;
-async function ensureTables(){
- if(!ready) ready=(async()=>{
-  await pool().query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
-  await pool().query(`CREATE TABLE IF NOT EXISTS ${schema}.cars(id uuid PRIMARY KEY,label varchar(100) NOT NULL,public_token varchar(80) UNIQUE NOT NULL,owner_hash char(64) NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),active boolean NOT NULL DEFAULT true)`);
-  await pool().query(`CREATE TABLE IF NOT EXISTS ${schema}.alerts(id uuid PRIMARY KEY,car_id uuid NOT NULL REFERENCES ${schema}.cars(id) ON DELETE CASCADE,type varchar(24) NOT NULL CHECK(type IN ('blocked','lights','something','damage','other')),note varchar(400),status varchar(20) NOT NULL DEFAULT 'new',reply varchar(40),created_at timestamptz NOT NULL DEFAULT now(),replied_at timestamptz)`);
-  await pool().query(`CREATE INDEX IF NOT EXISTS alerts_car_created_idx ON ${schema}.alerts(car_id,created_at DESC)`);
- })();
- return ready;
-}
-function ownerKey(req:Request){const v=req.headers.get("authorization")||"";return v.startsWith("Bearer ")?v.slice(7).trim():"";}
-const quickReplies:Record<string,string>={now:"نازل دلوقتي",two:"دقيقتين",cannot:"مش هقدر أنزل",arrived:"وصلت"};
-export const listCars:SlotApiHandler=async(req)=>{
- await ensureTables();const token=new URL(req.url).searchParams.get("token");
- if(token){const r=await pool().query(`SELECT id,label,public_token FROM ${schema}.cars WHERE public_token=$1 AND active=true LIMIT 1`,[token]);if(!r.rows[0])return apiError(404,"car_not_found","Car code not found.");return apiJson({car:{id:r.rows[0].id,label:r.rows[0].label,token:r.rows[0].public_token}});}
- const key=ownerKey(req);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
- const digest=hash(key);const r=await pool().query(`SELECT id,label,public_token,created_at FROM ${schema}.cars WHERE owner_hash=$1 AND active=true ORDER BY created_at DESC`,[digest]);
- const a=await pool().query(`SELECT a.id,a.type,a.note,a.status,a.reply,a.created_at,c.label car_label FROM ${schema}.alerts a JOIN ${schema}.cars c ON c.id=a.car_id WHERE c.owner_hash=$1 ORDER BY a.created_at DESC LIMIT 100`,[digest]);
- return apiJson({cars:r.rows.map(x=>({id:x.id,label:x.label,token:x.public_token,createdAt:x.created_at})),alerts:a.rows.map(x=>({id:x.id,type:x.type,note:x.note,status:x.status,reply:x.reply,createdAt:x.created_at,carLabel:x.car_label}))});
+
+type CarRecord = { kind:"car"; id:string; label:string; token:string; ownerHash:string; createdAt:string; active:boolean };
+type AlertRecord = { kind:"alert"; id:string; carId:string; type:string; note:string|null; status:string; reply:string|null; createdAt:string; repliedAt:string|null };
+const prefix="ive-arrived-sir";
+const storageToken=process.env.BLOB_READ_WRITE_TOKEN;
+function encryptionKey(){if(!storageToken)throw new Error("Blob storage is not configured.");return createHash("sha256").update("iavs-private-records-v1:").update(storageToken).digest();}
+function seal(value:unknown){const iv=randomBytes(12);const cipher=createCipheriv("aes-256-gcm",encryptionKey(),iv);const encrypted=Buffer.concat([cipher.update(JSON.stringify(value),"utf8"),cipher.final()]);return JSON.stringify({v:1,iv:iv.toString("base64"),tag:cipher.getAuthTag().toString("base64"),data:encrypted.toString("base64")});}
+function open<T>(value:string):T{const box=JSON.parse(value);if(box.v!==1)throw new Error("Unsupported encrypted record.");const decipher=createDecipheriv("aes-256-gcm",encryptionKey(),Buffer.from(box.iv,"base64"));decipher.setAuthTag(Buffer.from(box.tag,"base64"));const clear=Buffer.concat([decipher.update(Buffer.from(box.data,"base64")),decipher.final()]).toString("utf8");return JSON.parse(clear) as T;}
+async function save(path:string,value:unknown,overwrite=false){if(!storageToken)throw new Error("Blob storage is not configured.");await put(path,seal(value),{access:"public",token:storageToken,addRandomSuffix:false,allowOverwrite:overwrite,contentType:"application/json",cacheControlMaxAge:0});}
+async function records<T>(pathPrefix:string):Promise<T[]>{if(!storageToken)throw new Error("Blob storage is not configured.");let cursor:string|undefined;const out:T[]=[];do{const page=await list({prefix:pathPrefix,limit:1000,cursor,token:storageToken});for(const blob of page.blobs){try{const response=await fetch(blob.url,{cache:"no-store"});if(response.ok)out.push(open<T>(await response.text()));}catch{ /* Ignore an unreadable individual record; never expose ciphertext. */ }}cursor=page.hasMore?page.cursor:undefined;}while(cursor);return out;}
+async function find<T>(path:string):Promise<T|null>{const all=await records<T>(path);return all[0]??null;}
+function ownerKey(request:Request){const value=request.headers.get("authorization")||"";return value.startsWith("Bearer ")?value.slice(7).trim():"";}
+const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
+function same(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);}
+const replyKeys=new Set(["now","two","cannot","arrived"]);
+
+export const listCars:SlotApiHandler=async(request)=>{
+ const token=new URL(request.url).searchParams.get("token");
+ if(token){const all=await records<CarRecord>(prefix+"/cars/");const car=all.find(item=>item.active&&same(item.token,token));if(!car)return apiError(404,"car_not_found","Car code not found.");return apiJson({car:{id:car.id,label:car.label,token:car.token}});}
+ const key=ownerKey(request);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
+ const ownerHash=hash(key);const allCars=await records<CarRecord>(prefix+"/cars/");const cars=allCars.filter(car=>car.active&&same(car.ownerHash,ownerHash));
+ const ids=new Set(cars.map(car=>car.id));const allAlerts=await records<AlertRecord>(prefix+"/alerts/");
+ const alerts=allAlerts.filter(alert=>ids.has(alert.carId)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,100);
+ return apiJson({cars:cars.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(({id,label,token,createdAt})=>({id,label,token,createdAt})),alerts:alerts.map(alert=>({...alert,carLabel:cars.find(car=>car.id===alert.carId)?.label||"Car"}))});
 };
-export const createCar:SlotApiHandler=async(req)=>{
- await ensureTables();const key=ownerKey(req);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
- let body:any;try{body=await req.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
+
+export const createCar:SlotApiHandler=async(request)=>{
+ const key=ownerKey(request);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
+ let body:any;try{body=await request.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
  const label=typeof body.label==="string"?body.label.trim().slice(0,100):"My car";if(!label)return apiError(400,"invalid_label","Car label required.");
- const id=randomUUID(),token=randomBytes(24).toString("base64url");await pool().query(`INSERT INTO ${schema}.cars(id,label,public_token,owner_hash) VALUES($1,$2,$3,$4)`,[id,label,token,hash(key)]);
- return apiJson({car:{id,label,token,createdAt:new Date().toISOString()}},{status:201});
+ const car:CarRecord={kind:"car",id:randomUUID(),label,token:randomBytes(32).toString("base64url"),ownerHash:hash(key),createdAt:new Date().toISOString(),active:true};
+ await save(prefix+"/cars/"+car.id+".json",car);
+ return apiJson({car:{id:car.id,label:car.label,token:car.token,createdAt:car.createdAt}},{status:201});
 };
-export const createAlert:SlotApiHandler=async(req)=>{
- await ensureTables();let b:any;try{b=await req.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
- const token=typeof b.token==="string"?b.token:"",type=typeof b.type==="string"?b.type:"",note=typeof b.note==="string"?b.note.trim().slice(0,400):"";
+
+export const createAlert:SlotApiHandler=async(request)=>{
+ let body:any;try{body=await request.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
+ const token=typeof body.token==="string"?body.token:"",type=typeof body.type==="string"?body.type:"",note=typeof body.note==="string"?body.note.trim().slice(0,400):"";
  if(!token||!["blocked","lights","something","damage","other"].includes(type))return apiError(400,"invalid_alert","Choose a valid alert type.");
- const car=await pool().query(`SELECT id,label FROM ${schema}.cars WHERE public_token=$1 AND active=true LIMIT 1`,[token]);if(!car.rows[0])return apiError(404,"car_not_found","Car not found.");
- const id=randomUUID();await pool().query(`INSERT INTO ${schema}.alerts(id,car_id,type,note) VALUES($1,$2,$3,$4)`,[id,car.rows[0].id,type,note||null]);
- return apiJson({alert:{id,type,note,status:"new",reply:null,carLabel:car.rows[0].label,createdAt:new Date().toISOString()}},{status:201});
+ const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.active&&same(item.token,token));if(!car)return apiError(404,"car_not_found","Car not found.");
+ const alert:AlertRecord={kind:"alert",id:randomUUID(),carId:car.id,type,note:note||null,status:"new",reply:null,createdAt:new Date().toISOString(),repliedAt:null};
+ await save(prefix+"/alerts/"+alert.id+".json",alert);
+ return apiJson({alert:{id:alert.id,type,note:alert.note,status:alert.status,reply:null,carLabel:car.label,createdAt:alert.createdAt}},{status:201});
 };
-export const replyAlert:SlotApiHandler=async(req)=>{
- await ensureTables();const key=ownerKey(req);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
- let b:any;try{b=await req.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
- const id=typeof b.alertId==="string"?b.alertId:"",reply=typeof b.reply==="string"?b.reply:"";if(!id||!quickReplies[reply])return apiError(400,"invalid_reply","Invalid quick reply.");
- const r=await pool().query(`UPDATE ${schema}.alerts a SET reply=$1,status='replied',replied_at=now() FROM ${schema}.cars c WHERE a.car_id=c.id AND c.owner_hash=$2 AND a.id=$3 RETURNING a.id`,[quickReplies[reply],hash(key),id]);
- if(!r.rows[0])return apiError(404,"alert_not_found","Alert not found.");return apiJson({ok:true});
+
+export const getAlert:SlotApiHandler=async(request)=>{
+ const id=new URL(request.url).searchParams.get("id")||"";if(!/^[0-9a-f-]{36}$/i.test(id))return apiError(400,"invalid_id","Invalid alert id.");
+ const alert=await find<AlertRecord>(prefix+"/alerts/"+id+".json");if(!alert)return apiError(404,"alert_not_found","Alert not found.");
+ return apiJson({alert:{id:alert.id,status:alert.status,reply:alert.reply}});
+};
+
+export const replyAlert:SlotApiHandler=async(request)=>{
+ const key=ownerKey(request);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
+ let body:any;try{body=await request.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
+ const id=typeof body.alertId==="string"?body.alertId:"",reply=typeof body.reply==="string"?body.reply:"";if(!id||!replyKeys.has(reply))return apiError(400,"invalid_reply","Invalid quick reply.");
+ const alert=await find<AlertRecord>(prefix+"/alerts/"+id+".json");if(!alert)return apiError(404,"alert_not_found","Alert not found.");
+ const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.id===alert.carId&&same(item.ownerHash,hash(key)));if(!car)return apiError(404,"alert_not_found","Alert not found.");
+ alert.reply=reply;alert.status="replied";alert.repliedAt=new Date().toISOString();await save(prefix+"/alerts/"+id+".json",alert,true);
+ return apiJson({ok:true});
 };
