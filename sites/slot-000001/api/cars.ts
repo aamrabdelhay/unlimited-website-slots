@@ -1,6 +1,8 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { list, put } from "@vercel/blob";
 import { apiError, apiJson, type SlotApiHandler } from "@/lib/site-contract";
+import { createRateLimiter, clientKey } from "@/lib/rate-limit";
+const alertLimiter=createRateLimiter({windowMs:10*60*1000,max:5});
 
 type CarRecord = { kind:"car"; id:string; label:string; token:string; ownerHash:string; createdAt:string; active:boolean };
 type AlertRecord = { kind:"alert"; id:string; carId:string; type:string; note:string|null; status:string; reply:string|null; createdAt:string; repliedAt:string|null };
@@ -37,6 +39,7 @@ export const createCar:SlotApiHandler=async(request)=>{
 };
 
 export const createAlert:SlotApiHandler=async(request)=>{
+ const limit=alertLimiter.check(clientKey(request));if(!limit.ok)return Response.json({ok:false,error:{code:"rate_limited",message:"Please wait before sending another alert."}},{status:429,headers:{"Retry-After":String(limit.retryAfterSeconds)}});
  let body:any;try{body=await request.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
  const token=typeof body.token==="string"?body.token:"",type=typeof body.type==="string"?body.type:"",note=typeof body.note==="string"?body.note.trim().slice(0,400):"";
  if(!token||!["blocked","lights","something","damage","other"].includes(type))return apiError(400,"invalid_alert","Choose a valid alert type.");
