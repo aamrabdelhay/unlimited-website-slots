@@ -1,4 +1,4 @@
-import { BookmarkCheck, Gamepad2, Scale } from "lucide-react";
+import { BookmarkCheck, Gamepad2, Scale, CarFront } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -51,6 +51,21 @@ export default function DashboardPage() {
           </span>
           <span className="relative text-xs text-rose-100/65">
             SAVE NOW · FIND IT LATER
+          </span>
+        </a>
+
+        <a
+          href="/s/1"
+          className="group relative flex min-h-64 flex-col items-center justify-center gap-7 overflow-hidden rounded-3xl border border-emerald-200/30 bg-gradient-to-br from-[#174E40] via-[#123D32] to-[#102B2C] px-8 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] transition duration-300 hover:-translate-y-1 hover:border-emerald-200/60 hover:shadow-[0_30px_90px_rgba(0,0,0,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-200"
+        >
+          <span className="flex h-20 w-20 items-center justify-center rounded-2xl border border-emerald-200/25 bg-emerald-200/10 text-emerald-200 transition duration-300 group-hover:scale-105">
+            <CarFront className="h-10 w-10" strokeWidth={1.5} aria-hidden="true" />
+          </span>
+          <span className="text-xl font-bold tracking-wide text-stone-50 sm:text-2xl">
+            I've arrived, sir
+          </span>
+          <span className="text-xs text-emerald-100/65">
+            PRIVATE CAR QR ALERTS
           </span>
         </a>
       </nav>
