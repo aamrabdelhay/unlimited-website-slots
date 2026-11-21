@@ -5,6 +5,8 @@
 
 import { slotManifestSchema, type SlotManifest } from "@/lib/manifest";
 import type { SiteDefinition } from "@/lib/site-contract";
+import { site as site_slot_000001 } from "../../sites/slot-000001/site";
+import rawManifest_slot_000001 from "../../sites/slot-000001/manifest.json";
 
 export interface SlotRegistryEntry {
   slotId: number;
@@ -14,9 +16,13 @@ export interface SlotRegistryEntry {
   site: SiteDefinition;
 }
 
-export const SLOT_ENTRIES: readonly SlotRegistryEntry[] = [];
+const manifest_slot_000001: SlotManifest = slotManifestSchema.parse(rawManifest_slot_000001);
 
-export const REGISTERED_SLOT_IDS: readonly number[] = [];
+export const SLOT_ENTRIES: readonly SlotRegistryEntry[] = [
+  { slotId: 1, dirName: "slot-000001", basePath: "/s/1", manifest: manifest_slot_000001, site: site_slot_000001 },
+];
+
+export const REGISTERED_SLOT_IDS: readonly number[] = [1];
 
 const entriesById: ReadonlyMap<number, SlotRegistryEntry> = new Map(SLOT_ENTRIES.map((entry) => [entry.slotId, entry]));
 
