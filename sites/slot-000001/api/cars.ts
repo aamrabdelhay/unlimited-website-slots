@@ -5,7 +5,7 @@ import { createRateLimiter, clientKey } from "@/lib/rate-limit";
 const alertLimiter=createRateLimiter({windowMs:10*60*1000,max:5});
 
 type CarRecord = { kind:"car"; id:string; label:string; token:string; ownerHash:string; createdAt:string; active:boolean };
-type AlertRecord = { kind:"alert"; id:string; carId:string; type:string; note:string|null; status:string; reply:string|null; createdAt:string; repliedAt:string|null };
+type ChatMessage = { id:string; sender:"visitor"|"owner"; text:string; createdAt:string };\ntype AlertRecord = { kind:"alert"; id:string; carId:string; type:string; note:string|null; status:string; reply:string|null; createdAt:string; repliedAt:string|null; messages?:ChatMessage[] };
 const prefix="ive-arrived-sir";
 const storageToken=process.env.BLOB_READ_WRITE_TOKEN;
 function encryptionKey(){if(!storageToken)throw new Error("Blob storage is not configured.");return createHash("sha256").update("iavs-private-records-v1:").update(storageToken).digest();}
@@ -52,15 +52,15 @@ export const createAlert:SlotApiHandler=async(request)=>{
 export const getAlert:SlotApiHandler=async(request)=>{
  const id=new URL(request.url).searchParams.get("id")||"";if(!/^[0-9a-f-]{36}$/i.test(id))return apiError(400,"invalid_id","Invalid alert id.");
  const alert=await find<AlertRecord>(prefix+"/alerts/"+id+".json");if(!alert)return apiError(404,"alert_not_found","Alert not found.");
- return apiJson({alert:{id:alert.id,status:alert.status,reply:alert.reply}});
+ return apiJson({alert:{id:alert.id,status:alert.status,reply:alert.reply,messages:alert.messages||[]}});
 };
 
 export const replyAlert:SlotApiHandler=async(request)=>{
  const key=ownerKey(request);if(key.length<32)return apiError(401,"owner_key_required","Owner key required.");
  let body:any;try{body=await request.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
- const id=typeof body.alertId==="string"?body.alertId:"",reply=typeof body.reply==="string"?body.reply:"";if(!id||!replyKeys.has(reply))return apiError(400,"invalid_reply","Invalid quick reply.");
+ const id=typeof body.alertId==="string"?body.alertId:"",reply=typeof body.reply==="string"?body.reply:"",message=typeof body.message==="string"?body.message.trim().slice(0,1000):"";if(!id||(!replyKeys.has(reply)&&!message))return apiError(400,"invalid_reply","Invalid reply.");
  const alert=await find<AlertRecord>(prefix+"/alerts/"+id+".json");if(!alert)return apiError(404,"alert_not_found","Alert not found.");
  const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.id===alert.carId&&same(item.ownerHash,hash(key)));if(!car)return apiError(404,"alert_not_found","Alert not found.");
- alert.reply=reply;alert.status="replied";alert.repliedAt=new Date().toISOString();await save(prefix+"/alerts/"+id+".json",alert,true);
+ if(replyKeys.has(reply)){alert.reply=reply;alert.status="replied";alert.repliedAt=new Date().toISOString();}if(message){alert.messages=[...(alert.messages||[]),{id:randomUUID(),sender:"owner",text:message,createdAt:new Date().toISOString()}];}await save(prefix+"/alerts/"+id+".json",alert,true);
  return apiJson({ok:true});
 };
