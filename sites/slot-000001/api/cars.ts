@@ -55,7 +55,7 @@ export const createAlert:SlotApiHandler=async(request)=>{
 export const getAlert:SlotApiHandler=async(request)=>{
  const id=new URL(request.url).searchParams.get("id")||"";if(!/^[0-9a-f-]{36}$/i.test(id))return apiError(400,"invalid_id","Invalid alert id.");
  const alert=await find<AlertRecord>(prefix+"/alerts/"+id+".json");if(!alert)return apiError(404,"alert_not_found","Alert not found.");
- return apiJson({alert:{id:alert.id,status:alert.status,reply:alert.reply,messages:alert.messages||[]}});
+ const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.id===alert.carId&&item.active);return apiJson({alert:{id:alert.id,status:alert.status,reply:alert.reply,messages:alert.messages||[],type:alert.type,note:alert.note,createdAt:alert.createdAt,carLabel:car?.label||"Car"}});
 };
 
 export const replyAlert:SlotApiHandler=async(request)=>{
