@@ -44,7 +44,7 @@ export const createAlert:SlotApiHandler=async(request)=>{
  const token=typeof body.token==="string"?body.token:"",type=typeof body.type==="string"?body.type:"",note=typeof body.note==="string"?body.note.trim().slice(0,400):"";
  if(!token||!["blocked","lights","something","damage","other"].includes(type))return apiError(400,"invalid_alert","Choose a valid alert type.");
  const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.active&&same(item.token,token));if(!car)return apiError(404,"car_not_found","Car not found.");
- const alert:AlertRecord={kind:"alert",id:randomUUID(),carId:car.id,type,note:note||null,status:"new",reply:null,createdAt:new Date().toISOString(),repliedAt:null};
+ const alert:AlertRecord={kind:"alert",id:randomUUID(),carId:car.id,type,note:note||null,status:"new",reply:null,createdAt:new Date().toISOString(),repliedAt:null,messages:[]};
  await save(prefix+"/alerts/"+alert.id+".json",alert);
  return apiJson({alert:{id:alert.id,type,note:alert.note,status:alert.status,reply:null,carLabel:car.label,createdAt:alert.createdAt}},{status:201});
 };
