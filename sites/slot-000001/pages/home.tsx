@@ -21,7 +21,10 @@ export function HomePage(){
  useEffect(()=>{if(!token)return;fetch("/api/s/1/cars?token="+encodeURIComponent(token)).then(r=>r.ok?r.json():null).then(d=>{if(d?.car){S(d.car);M("visitor")}else E(t.unknown)}).catch(()=>E(t.unknown))},[token]);
  useEffect(()=>{if(mode!=="owner"||!key)return;const timer=window.setInterval(()=>ownerLoad(key),8000);return()=>window.clearInterval(timer)},[mode,key]);
  useEffect(()=>{
-  if(mode!=="owner"||!key||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window))return;
+  if(mode!=="owner"||!key)return;
+  const capability=pushCapability();
+  if(!capability.supported)return;
+  if(capability.isIOS&&!capability.standalone){PushStatus("على iPhone، أضف الموقع إلى الشاشة الرئيسية من قائمة مشاركة في Safari لتفعيل الإشعارات الفورية. المحادثة والتنبيهات داخل الموقع تعمل دون ذلك.");return}
   let active=true;
   (async()=>{try{
    const registration=await navigator.serviceWorker.getRegistration("/s/1");
@@ -39,24 +42,39 @@ export function HomePage(){
  },[mode,key]);
 
  useEffect(()=>{if(!car||!qr.current)return;let stop=false;const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";s.onload=()=>{if(!stop&&qr.current&&window.QRCode){qr.current.innerHTML="";new window.QRCode(qr.current,{text:href(car.token),width:260,height:260,colorDark:"#123D32",colorLight:"#FFFFFF",correctLevel:2})}};s.onerror=()=>{if(!stop)E(lang==="ar"?"تعذر تحميل مولّد QR. تحقق من اتصال الإنترنت ثم أعد المحاولة.":"QR generator could not load. Check your internet connection and retry.")};document.head.appendChild(s);return()=>{stop=true}},[car]);
+ function pushCapability(){
+  const supported=typeof window!=="undefined"&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+  const isIOS=typeof navigator!=="undefined"&&(/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1));
+  const standalone=typeof window!=="undefined"&&((window.matchMedia?.("(display-mode: standalone)").matches)||(("standalone" in navigator)&&Boolean((navigator as Navigator&{standalone?:boolean}).standalone)));
+  return {supported,isIOS,standalone};
+ }
  async function enablePush(){
   if(!key){E(t.noKey);return}
+  const capability=pushCapability();
+  if(capability.isIOS&&!capability.standalone){
+   PushStatus("على iPhone: افتح الموقع في Safari، واضغط مشاركة ثم «إضافة إلى الشاشة الرئيسية». افتح الموقع من الأيقونة الجديدة، ثم فعّل الإشعارات. يمكنك استخدام التنبيهات والمحادثة داخل الموقع دون هذه الخطوة.");
+   PushPrompt(false);return;
+  }
+  if(!capability.supported){
+   PushStatus("الإشعارات الفورية بالخلفية غير متاحة في هذا المتصفح. ستظل التنبيهات والمحادثة تعمل داخل الموقع أثناء فتحه.");
+   PushPrompt(false);return;
+  }
   B(true);PushStatus("");
   try{
-   if(!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window))throw Error("هذا المتصفح لا يدعم إشعارات الويب. استخدم Chrome على Android أو Safari على iPhone.");
+   if(!window.isSecureContext)throw Error("يلزم فتح الموقع عبر اتصال HTTPS آمن لتفعيل الإشعارات.");
    const permission=await Notification.requestPermission();
-   if(permission!=="granted")throw Error("لم يتم السماح بالإشعارات. فعّلها من إعدادات المتصفح.");
+   if(permission!=="granted")throw Error("لم يتم السماح بالإشعارات. يمكنك متابعة استخدام التنبيهات والمحادثة داخل الموقع.");
    const configResponse=await fetch("/api/s/1/push-config");
    const config=await configResponse.json();if(!configResponse.ok||!config.publicKey)throw Error(config?.error?.message||"إعداد الإشعارات غير مكتمل على السيرفر.");
    const registration=await navigator.serviceWorker.register("/api/s/1/push-sw",{scope:"/s/1"});
    await navigator.serviceWorker.ready;
    const existing=await registration.pushManager.getSubscription();
-   const applicationServerKey=Uint8Array.from(atob(config.publicKey.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
+   const applicationServerKey=Uint8Array.from(atob(config.publicKey.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-config.publicKey.length%4)%4)),c=>c.charCodeAt(0));
    const subscription=existing||await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey});
-   const response=await fetch("/api/s/1/push-subscriptions",{method:"POST",headers:{"Content-Type":"application/json","X-Owner-Key":encodeURIComponent(key)},body:JSON.stringify({subscription:subscription.toJSON()})});
+   const response=await fetch("/api/s/1/push-subscriptions",{method:"POST",headers:{"Content-Type":"application/json","X-Owner-Key":key,"Authorization":"Bearer "+key},body:JSON.stringify({subscription:subscription.toJSON()})});
    const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result?.error?.message||"تعذر حفظ اشتراك الإشعارات.");
    PushStatus("تم تفعيل الإشعارات على هذا الجهاز.");PushEnabled(true);PushPrompt(false);localStorage.setItem("iavs_push_enabled","1");
-  }catch(error){E(error instanceof Error?error.message:"تعذر تفعيل الإشعارات.");}
+  }catch(error){PushStatus(error instanceof Error?error.message:"تعذر تفعيل الإشعارات. ستظل المحادثة والتنبيهات داخل الموقع متاحة.");}
   finally{B(false)}
  }
  async function create(e:React.FormEvent){e.preventDefault();if(busy)return;B(true);E("");try{const k=key&&key.trim().length>=32?key.trim():crypto.randomUUID()+crypto.randomUUID();localStorage.setItem("iavs_key",k);K(k);const r=await fetch("/api/s/1/cars",{method:"POST",headers:{"Content-Type":"application/json","X-Owner-Key":encodeURIComponent(k)},body:JSON.stringify({label:label.trim()||"My car"})});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d?.error?.message||d?.error||"تعذر إنشاء الكود. حاول مرة أخرى.");C(old=>[d.car,...old]);S(d.car);N("");PushPrompt(true)}catch(x){E(x instanceof Error?x.message:"تعذر إنشاء الكود.")}finally{B(false)}}
