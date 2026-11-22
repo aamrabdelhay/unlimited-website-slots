@@ -40,9 +40,9 @@ export const createCar:SlotApiHandler=async(request)=>{
 };
 
 export const createAlert:SlotApiHandler=async(request)=>{
- const limit=alertLimiter.check(clientKey(request));if(!limit.ok)return Response.json({ok:false,error:{code:"rate_limited",message:"Please wait before sending another alert."}},{status:429,headers:{"Retry-After":String(limit.retryAfterSeconds)}});
  let body:any;try{body=await request.json();}catch{return apiError(400,"invalid_json","Invalid request.");}
  if(typeof body.alertId==="string"&&typeof body.message==="string"){const id=body.alertId.trim(),message=body.message.trim().slice(0,1000);if(!/^[0-9a-f-]{36}$/i.test(id)||!message)return apiError(400,"invalid_message","Write a message.");const alert=await find<AlertRecord>(prefix+"/alerts/"+id+".json");if(!alert)return apiError(404,"alert_not_found","Conversation not found.");alert.messages=[...(alert.messages||[]),{id:randomUUID(),sender:"visitor",text:message,createdAt:new Date().toISOString()}];await save(prefix+"/alerts/"+id+".json",alert,true);const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.id===alert.carId);if(car)await notifyOwner(car,alert,new URL(request.url).origin);return apiJson({ok:true,messages:alert.messages});}
+ const limit=alertLimiter.check(clientKey(request));if(!limit.ok)return Response.json({ok:false,error:{code:"rate_limited",message:"Please wait before sending another alert."}},{status:429,headers:{"Retry-After":String(limit.retryAfterSeconds)}});
  const token=typeof body.token==="string"?body.token:"",type=typeof body.type==="string"?body.type:"",note=typeof body.note==="string"?body.note.trim().slice(0,400):"";
  if(!token||!["blocked","lights","something","damage","other"].includes(type))return apiError(400,"invalid_alert","Choose a valid alert type.");
  const cars=await records<CarRecord>(prefix+"/cars/");const car=cars.find(item=>item.active&&same(item.token,token));if(!car)return apiError(404,"car_not_found","Car not found.");
