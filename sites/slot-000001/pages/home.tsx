@@ -24,7 +24,7 @@ export function HomePage(){
   if(mode!=="owner"||!key)return;
   const capability=pushCapability();
   if(!capability.supported)return;
-  if(capability.isIOS&&!capability.standalone){PushStatus("على iPhone، أضف الموقع إلى الشاشة الرئيسية من قائمة مشاركة في Safari لتفعيل الإشعارات الفورية. المحادثة والتنبيهات داخل الموقع تعمل دون ذلك.");return}
+  if(capability.isIOS&&!capability.standalone){PushStatus("الموقع والمحادثة والتنبيهات تعمل من Safari مباشرة دون إضافة أو تثبيت. إشعارات الخلفية على iPhone قد تتطلب إضافة الموقع للشاشة الرئيسية، وهذا اختياري تمامًا.");return}
   let active=true;
   (async()=>{try{
    const registration=await navigator.serviceWorker.getRegistration("/s/1");
@@ -52,7 +52,7 @@ export function HomePage(){
   if(!key){E(t.noKey);return}
   const capability=pushCapability();
   if(capability.isIOS&&!capability.standalone){
-   PushStatus("على iPhone: افتح الموقع في Safari، واضغط مشاركة ثم «إضافة إلى الشاشة الرئيسية». افتح الموقع من الأيقونة الجديدة، ثم فعّل الإشعارات. يمكنك استخدام التنبيهات والمحادثة داخل الموقع دون هذه الخطوة.");
+   PushStatus("تقدر تستخدم الموقع والمحادثة والتنبيهات من Safari مباشرة دون تثبيت. إشعارات الخلفية على iPhone قد لا تعمل من تبويب المتصفح، لكن ده لا يؤثر على استخدام الموقع أو متابعة الرسائل أثناء فتحه.");
    PushPrompt(false);return;
   }
   if(!capability.supported){
@@ -77,7 +77,7 @@ export function HomePage(){
   }catch(error){PushStatus(error instanceof Error?error.message:"تعذر تفعيل الإشعارات. ستظل المحادثة والتنبيهات داخل الموقع متاحة.");}
   finally{B(false)}
  }
- async function create(e:React.FormEvent){e.preventDefault();if(busy)return;B(true);E("");try{const k=key&&key.trim().length>=32?key.trim():crypto.randomUUID()+crypto.randomUUID();localStorage.setItem("iavs_key",k);K(k);const r=await fetch("/api/s/1/cars",{method:"POST",headers:{"Content-Type":"application/json","X-Owner-Key":encodeURIComponent(k)},body:JSON.stringify({label:label.trim()||"My car"})});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d?.error?.message||d?.error||"تعذر إنشاء الكود. حاول مرة أخرى.");C(old=>[d.car,...old]);S(d.car);N("");PushPrompt(true)}catch(x){E(x instanceof Error?x.message:"تعذر إنشاء الكود.")}finally{B(false)}}
+ async function create(e:React.FormEvent){e.preventDefault();if(busy)return;B(true);E("");try{const k=key&&key.trim().length>=32?key.trim():crypto.randomUUID()+crypto.randomUUID();localStorage.setItem("iavs_key",k);K(k);const r=await fetch("/api/s/1/cars",{method:"POST",headers:{"Content-Type":"application/json","X-Owner-Key":encodeURIComponent(k)},body:JSON.stringify({label:label.trim()||"My car"})});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d?.error?.message||d?.error||"تعذر إنشاء الكود. حاول مرة أخرى.");C(old=>[d.car,...old]);S(d.car);N("");const cap=pushCapability();PushPrompt(cap.supported&&!(cap.isIOS&&!cap.standalone))}catch(x){E(x instanceof Error?x.message:"تعذر إنشاء الكود.")}finally{B(false)}}
  async function send(e:React.FormEvent){e.preventDefault();if(!car||!reason)return;B(true);try{const r=await fetch("/api/s/1/alerts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:car.token,type:reason,note})});const d=await r.json();if(!r.ok)throw Error(d.error);U(d.alert)}catch(x){E(x instanceof Error?x.message:"Error")}finally{B(false)}}
  useEffect(()=>{if(!sent)return;const timer=window.setInterval(()=>{fetch("/api/s/1/alerts?id="+encodeURIComponent(sent.id)).then(r=>r.ok?r.json():null).then(d=>{if(d?.alert)U(old=>old?{...old,...d.alert}:old)}).catch(()=>{})},4000);return()=>window.clearInterval(timer)},[sent?.id]);
  async function sendChat(a:Alert,who:"owner"|"visitor"){const message=chatText.trim();if(!message)return;B(true);try{const res=await fetch("/api/s/1/alerts",{method:who==="owner"?"PATCH":"POST",headers:{"Content-Type":"application/json",...(who==="owner"?{"X-Owner-Key":encodeURIComponent(key)}:{})},body:JSON.stringify({alertId:a.id,message})});if(!res.ok)throw Error();ChatText("");if(who==="owner")await ownerLoad(key);else{const q=await fetch("/api/s/1/alerts?id="+encodeURIComponent(a.id));const d=await q.json();if(d.alert)U(old=>old?{...old,...d.alert}:old)}}catch{E("تعذر إرسال الرسالة. حاول مرة أخرى.")}finally{B(false)}}
