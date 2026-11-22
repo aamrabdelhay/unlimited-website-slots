@@ -60,7 +60,8 @@ async function dispatch(
     });
   } catch (error) {
     // Never leak internals (and never log connection strings).
-    const failure = error instanceof Error ? error.message : String(error);\n    console.error(`[slot ${slotId}] unhandled API error: ${(error as Error).name}: ${failure.slice(0, 240)}`);
+    const failure = error instanceof Error ? error.message : String(error);
+    console.error(`[slot ${slotId}] unhandled API error: ${(error as Error).name}: ${failure.slice(0, 240)}`);
     return apiError(500, "internal_error", "The website failed to handle this request.");
   }
 }
