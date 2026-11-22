@@ -46,7 +46,8 @@ export function HomePage(){
   const a=document.createElement("a");a.download="ive-arrived-sir-"+c.label.replace(/[^a-z0-9\u0600-\u06FF-]/gi,"-")+".png";a.href=cv.toDataURL("image/png");a.click()
  }
  const quick=[["now",t.now],["two",t.two],["cannot",t.cannot],["arrived",t.arrived]] as const;
- return <main dir={rtl?"rtl":"ltr"} className="iavs-app min-h-screen bg-[#F4F1E8] text-[#173D34]">\n <style>{\`
+ return <main dir={rtl?"rtl":"ltr"} className="iavs-app min-h-screen bg-[#F4F1E8] text-[#173D34]">
+ <style>{`
 @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 .iavs-app{font-family:'Alexandria','Manrope',sans-serif;letter-spacing:-.012em;background-image:radial-gradient(ellipse at 8% 12%,rgba(22,134,107,.055),transparent 34%),radial-gradient(ellipse at 92% 45%,rgba(18,61,50,.035),transparent 30%)}
 .iavs-app:lang(en),.iavs-app:lang(fr){font-family:'Manrope','Alexandria',sans-serif}
@@ -67,7 +68,7 @@ export function HomePage(){
 .iavs-app input:focus,.iavs-app textarea:focus{box-shadow:0 0 0 4px rgba(22,134,107,.08)}
 ::selection{background:#cde9da;color:#123d32}
 @media(max-width:640px){.iavs-header{padding-top:14px;padding-bottom:14px}.iavs-hero{border-radius:26px}.iavs-choice-grid{margin-top:18px}.iavs-choice-card{border-radius:22px}.iavs-benefits{margin-top:34px}}
-\`}</style>
+`}</style>
  <header className="iavs-header mx-auto flex max-w-6xl items-center justify-between px-5 py-5"><button onClick={()=>{M("home");history.replaceState(null,"",base())}} className="flex items-center gap-3 text-start"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#DDF1E8] text-[#16866B]"><CarFront/></span><span><b className="block text-lg">I've arrived, sir</b><small className="text-[#81938A]">{t.tag}</small></span></button><div className="flex items-center gap-1 rounded-full border border-[#e1e8df] bg-white p-1"><Globe2 size={15} className="mx-2 text-[#16866B]"/>{(["ar","en","fr"] as Lang[]).map(l=><button key={l} onClick={()=>{L(l);localStorage.setItem("iavs_lang",l)}} className={"rounded-full px-3 py-1.5 text-xs font-bold "+(lang===l?"bg-[#16866B] text-white":"text-[#668078]")}>{l.toUpperCase()}</button>)}</div></header>
  <div className="mx-auto max-w-6xl px-5 pb-20">
  {mode==="home"&&!token&&<><section className="iavs-hero relative overflow-hidden rounded-[36px] bg-[#123D32] px-6 py-16 text-center text-white sm:py-24"><div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[#16866B]/40 blur-3xl"/><span className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-white/20 bg-white/10"><QrCode size={34}/></span><span className="relative mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs text-[#C9EBDD]"><ShieldCheck size={15}/>{t.private}</span><h1 className="relative mt-6 text-3xl font-extrabold sm:text-5xl">{t.hero}</h1><p className="relative mx-auto mt-5 max-w-2xl text-base leading-8 text-[#D4E8DF]">{t.intro}</p></section>
