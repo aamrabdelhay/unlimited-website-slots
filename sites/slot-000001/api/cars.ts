@@ -14,7 +14,7 @@ function open<T>(value:string):T{const box=JSON.parse(value);if(box.v!==1)throw 
 async function save(path:string,value:unknown,overwrite=false){if(!storageToken)throw new Error("Blob storage is not configured.");await put(path,seal(value),{access:"public",token:storageToken,addRandomSuffix:false,allowOverwrite:overwrite,contentType:"application/json",cacheControlMaxAge:0});}
 async function records<T>(pathPrefix:string):Promise<T[]>{if(!storageToken)throw new Error("Blob storage is not configured.");let cursor:string|undefined;const out:T[]=[];do{const page=await list({prefix:pathPrefix,limit:1000,cursor,token:storageToken});for(const blob of page.blobs){try{const response=await fetch(blob.url,{cache:"no-store"});if(response.ok)out.push(open<T>(await response.text()));}catch{ /* Ignore an unreadable individual record; never expose ciphertext. */ }}cursor=page.hasMore?page.cursor:undefined;}while(cursor);return out;}
 async function find<T>(path:string):Promise<T|null>{const all=await records<T>(path);return all[0]??null;}
-function ownerKey(request:Request){const value=request.headers.get("authorization")||"";return value.startsWith("Bearer ")?value.slice(7).trim():"";}
+function ownerKey(request:Request){const encoded=request.headers.get("x-owner-key");if(encoded!==null){try{return decodeURIComponent(encoded).trim()}catch{return ""}}const value=request.headers.get("authorization")||"";return value.startsWith("Bearer ")?value.slice(7).trim():"";}
 const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
 function same(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);}
 const replyKeys=new Set(["now","two","cannot","arrived"]);
